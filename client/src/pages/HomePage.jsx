@@ -5,7 +5,7 @@ import oliveHouseImg from '../assets/olive_house.jpg'
 import goldenHourImg from '../assets/golden_hour.jpg'
 
 export default function HomePage({
-  setCurrentPage: _setCurrentPage,
+  setCurrentPage,
   searchQuery: externalSearchQuery,
   setSearchQuery: externalSetSearchQuery,
   onAddRecentSearch
@@ -237,13 +237,13 @@ export default function HomePage({
             </p>
           </div>
 
-          <a
-            href="#shortlist"
+          <button
+            onClick={() => setCurrentPage('discover')}
             className="inline-flex items-center gap-2 border border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-800 text-sm font-medium px-4 py-2.5 rounded-lg transition-colors shadow-sm self-start sm:self-auto cursor-pointer"
           >
             <span>Explore all places</span>
             <span className="text-base leading-none">→</span>
-          </a>
+          </button>
         </div>
 
         {/* 3 Cards Grid */}

@@ -38,8 +38,12 @@ export default function Navbar({
 
           <nav className="hidden md:flex items-center gap-8 text-[15px] font-medium text-neutral-700">
             <button
-              onClick={() => handleNavClick('#shortlist')}
-              className="hover:text-[#85312C] transition-colors cursor-pointer bg-transparent border-0 p-0 text-[15px] font-medium text-neutral-700"
+              onClick={() => setCurrentPage('discover')}
+              className={`transition-colors cursor-pointer bg-transparent border-0 p-0 text-[15px] font-medium ${
+                currentPage === 'discover'
+                  ? 'text-[#85312C] font-semibold'
+                  : 'text-neutral-700 hover:text-[#85312C]'
+              }`}
             >
               Discover
             </button>

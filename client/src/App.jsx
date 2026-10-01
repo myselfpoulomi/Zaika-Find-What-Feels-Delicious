@@ -5,6 +5,7 @@ import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import ProfilePage from './pages/ProfilePage'
+import DiscoverPage from './pages/DiscoverPage'
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState(() => {
@@ -12,6 +13,7 @@ export default function App() {
     if (hash === '#/login') return 'login'
     if (hash === '#/signup') return 'signup'
     if (hash === '#/profile') return 'profile'
+    if (hash === '#/discover') return 'discover'
     return 'home'
   })
 
@@ -55,6 +57,8 @@ export default function App() {
         setCurrentPage('signup')
       } else if (hash === '#/profile') {
         setCurrentPage('profile')
+      } else if (hash === '#/discover') {
+        setCurrentPage('discover')
       } else if (hash === '#/' || hash === '' || hash.startsWith('#')) {
         if (hash === '#/home' || hash === '#/' || hash === '') {
           setCurrentPage('home')
@@ -74,6 +78,8 @@ export default function App() {
       window.location.hash = '#/signup'
     } else if (page === 'profile') {
       window.location.hash = '#/profile'
+    } else if (page === 'discover') {
+      window.location.hash = '#/discover'
     } else {
       window.location.hash = '#/'
     }
@@ -170,6 +176,14 @@ export default function App() {
           setCurrentPage={navigateTo}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
+          onAddRecentSearch={handleAddRecentSearch}
+        />
+      )}
+
+      {currentPage === 'discover' && (
+        <DiscoverPage
+          setCurrentPage={navigateTo}
+          initialQuery={searchQuery}
           onAddRecentSearch={handleAddRecentSearch}
         />
       )}
