@@ -1,7 +1,11 @@
 import React from 'react'
 import zaikaLogo from '../assets/zaika.png'
 
-export default function Navbar({ currentPage, setCurrentPage, currentUser, onLogout }) {
+export default function Navbar({
+  currentPage,
+  setCurrentPage,
+  currentUser
+}) {
   const handleNavClick = (targetHash) => {
     if (currentPage !== 'home') {
       setCurrentPage('home')
@@ -54,7 +58,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentUser, onLog
           </nav>
         </div>
 
-        {/* Right: Search, Profile, Log in / Account, Compare Button */}
+        {/* Right: Search, Profile Icon Button (Navigates to /profile), (Log in if guest), Compare Button */}
         <div className="flex items-center gap-4 md:gap-6">
           <button
             onClick={() => {
@@ -80,34 +84,25 @@ export default function Navbar({ currentPage, setCurrentPage, currentUser, onLog
             </svg>
           </button>
 
+          {/* User Icon Button: Navigates directly to Profile Page Route */}
           <button
-            onClick={() => {
-              if (!currentUser) {
-                setCurrentPage('login')
-              }
-            }}
-            className="text-neutral-700 hover:text-[#85312C] transition-colors p-1.5 cursor-pointer"
-            title={currentUser ? currentUser.name : 'Account'}
-            aria-label="Account"
+            onClick={() => setCurrentPage('profile')}
+            className={`p-1.5 rounded-full transition-all cursor-pointer flex items-center justify-center ${
+              currentPage === 'profile'
+                ? 'text-[#85312C] bg-[#FAF1E8] ring-2 ring-[#85312C]/30'
+                : currentUser
+                ? 'text-neutral-800 hover:text-[#85312C] hover:bg-[#FAF1E8]'
+                : 'text-neutral-700 hover:text-[#85312C]'
+            }`}
+            title={currentUser ? `${currentUser.name} - Profile & Settings` : 'My Profile & Account'}
+            aria-label="My Profile & Account"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
           </button>
 
-          {currentUser ? (
-            <div className="hidden sm:flex items-center gap-2">
-              <span className="text-xs font-semibold text-neutral-800 bg-[#FAF1E8] text-[#85312C] px-2.5 py-1 rounded-full">
-                Hi, {currentUser.name.split(' ')[0]}
-              </span>
-              <button
-                onClick={onLogout}
-                className="text-xs text-neutral-500 hover:text-[#85312C] underline ml-1 cursor-pointer"
-              >
-                Log out
-              </button>
-            </div>
-          ) : (
+          {!currentUser && (
             <button
               onClick={() => setCurrentPage('login')}
               className={`hidden sm:inline-block text-[14px] font-medium transition-colors cursor-pointer ${

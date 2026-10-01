@@ -4,8 +4,25 @@ import saffronTableImg from '../assets/saffron_table.jpg'
 import oliveHouseImg from '../assets/olive_house.jpg'
 import goldenHourImg from '../assets/golden_hour.jpg'
 
-export default function HomePage({ setCurrentPage: _setCurrentPage }) {
-  const [searchQuery, setSearchQuery] = useState('')
+export default function HomePage({
+  setCurrentPage: _setCurrentPage,
+  searchQuery: externalSearchQuery,
+  setSearchQuery: externalSetSearchQuery,
+  onAddRecentSearch
+}) {
+  const [internalSearchQuery, setInternalSearchQuery] = useState('')
+  const searchQuery = externalSearchQuery !== undefined ? externalSearchQuery : internalSearchQuery
+  const setSearchQuery = externalSetSearchQuery !== undefined ? externalSetSearchQuery : setInternalSearchQuery
+
+  const handleSearchSubmit = (queryToSearch) => {
+    const q = queryToSearch !== undefined ? queryToSearch : searchQuery
+    if (q && q.trim() && onAddRecentSearch) {
+      onAddRecentSearch(q.trim())
+    }
+    const shortlist = document.getElementById('shortlist')
+    shortlist?.scrollIntoView({ behavior: 'smooth' })
+  }
+
   const [favorites, setFavorites] = useState({ 1: false, 2: false, 3: false })
   const [selectedForCompare, setSelectedForCompare] = useState({ 1: true, 2: true, 3: true })
   const [activeModal, setActiveModal] = useState(null)
@@ -90,7 +107,7 @@ export default function HomePage({ setCurrentPage: _setCurrentPage }) {
   return (
     <div className="flex-1 w-full">
       {/* 1. HERO SECTION */}
-      <section className="relative min-h-[580px] lg:min-h-[620px] flex items-center overflow-hidden">
+      <section className="relative min-h-[calc(100vh-5rem)] min-h-[calc(100dvh-5rem)] flex items-center overflow-hidden">
         {/* Background Image with Cinematic Gradient Overlay */}
         <div className="absolute inset-0 z-0">
           <img
@@ -134,14 +151,14 @@ export default function HomePage({ setCurrentPage: _setCurrentPage }) {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSearchSubmit()
+                }}
                 placeholder="Try: Italian dinner for 2 under ₹1500"
                 className="w-full bg-transparent text-neutral-900 placeholder:text-neutral-400 text-sm md:text-[15px] outline-none font-normal py-2"
               />
               <button
-                onClick={() => {
-                  const shortlist = document.getElementById('shortlist')
-                  shortlist?.scrollIntoView({ behavior: 'smooth' })
-                }}
+                onClick={() => handleSearchSubmit()}
                 className="bg-[#85312C] hover:bg-[#702622] text-white px-5 py-2.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap shadow-sm cursor-pointer ml-2"
               >
                 <span>Explore</span>
@@ -155,7 +172,10 @@ export default function HomePage({ setCurrentPage: _setCurrentPage }) {
               {quickSearches.map((tag) => (
                 <button
                   key={tag}
-                  onClick={() => setSearchQuery(tag)}
+                  onClick={() => {
+                    setSearchQuery(tag)
+                    handleSearchSubmit(tag)
+                  }}
                   className="bg-black/40 hover:bg-black/60 border border-white/20 backdrop-blur-md text-white/95 px-3 py-1.5 rounded-md transition-colors cursor-pointer"
                 >
                   {tag}
@@ -433,7 +453,10 @@ export default function HomePage({ setCurrentPage: _setCurrentPage }) {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div
-            onClick={() => setSearchQuery('Italian')}
+            onClick={() => {
+              setSearchQuery('Italian')
+              handleSearchSubmit('Italian')
+            }}
             className="group relative h-60 md:h-64 rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all"
           >
             <img
@@ -449,7 +472,10 @@ export default function HomePage({ setCurrentPage: _setCurrentPage }) {
           </div>
 
           <div
-            onClick={() => setSearchQuery('Coffee')}
+            onClick={() => {
+              setSearchQuery('Coffee')
+              handleSearchSubmit('Coffee')
+            }}
             className="group relative h-60 md:h-64 rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all"
           >
             <img
@@ -465,7 +491,10 @@ export default function HomePage({ setCurrentPage: _setCurrentPage }) {
           </div>
 
           <div
-            onClick={() => setSearchQuery('Comfort food')}
+            onClick={() => {
+              setSearchQuery('Comfort food')
+              handleSearchSubmit('Comfort food')
+            }}
             className="group relative h-60 md:h-64 rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all"
           >
             <img
