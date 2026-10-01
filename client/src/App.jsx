@@ -1,277 +1,709 @@
 import { useState } from 'react'
+import zaikaLogo from './assets/zaika.png'
+import heroBg from './assets/hero_bg.jpg'
+import saffronTableImg from './assets/saffron_table.jpg'
+import oliveHouseImg from './assets/olive_house.jpg'
+import goldenHourImg from './assets/golden_hour.jpg'
 
-function App() {
-  const [likes, setLikes] = useState(128)
-  const [hasLiked, setHasLiked] = useState(false)
-  const [activeCategory, setActiveCategory] = useState('All')
+export default function App() {
+  const [searchQuery, setSearchQuery] = useState('')
+  const [favorites, setFavorites] = useState({ 1: false, 2: false, 3: false })
+  const [selectedForCompare, setSelectedForCompare] = useState({ 1: true, 2: true, 3: true })
+  const [activeModal, setActiveModal] = useState(null)
+  const [isLoginOpen, setIsLoginOpen] = useState(false)
 
-  const categories = ['All', 'Street Food', 'Curries & Biryanis', 'Desserts', 'Beverages']
-
-  const handleLike = () => {
-    if (hasLiked) {
-      setLikes((prev) => prev - 1)
-      setHasLiked(false)
-    } else {
-      setLikes((prev) => prev + 1)
-      setHasLiked(true)
-    }
-  }
-
-  const features = [
-    {
-      title: 'React 19',
-      desc: 'Latest React features, fast components, and reactive state management.',
-      tag: 'Framework',
-      gradient: 'from-cyan-500/20 to-blue-500/10',
-      border: 'border-cyan-500/30',
-      badgeBg: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
-    },
-    {
-      title: 'Vite',
-      desc: 'Next-generation lightning fast HMR and optimized bundler setup.',
-      tag: 'Build Tool',
-      gradient: 'from-purple-500/20 to-pink-500/10',
-      border: 'border-purple-500/30',
-      badgeBg: 'bg-purple-500/10 text-purple-400 border-purple-500/20'
-    },
-    {
-      title: 'Tailwind CSS v4',
-      desc: 'High-performance CSS-first engine via @tailwindcss/vite plugin.',
-      tag: 'Styling',
-      gradient: 'from-teal-500/20 to-emerald-500/10',
-      border: 'border-teal-500/30',
-      badgeBg: 'bg-teal-500/10 text-teal-400 border-teal-500/20'
-    }
+  const quickSearches = [
+    'Date night',
+    'Under ₹500',
+    'Vegetarian',
+    'Coffee & work',
+    'Family dinner',
+    'Late night'
   ]
 
-  const tasteHighlights = [
+  const restaurants = [
     {
       id: 1,
-      title: 'Dum Biryani Royale',
-      category: 'Curries & Biryanis',
-      prepTime: '45 mins',
-      rating: '4.9',
-      tag: 'Chef Special',
-      description: 'Slow-cooked aromatic basmati rice layered with rich saffron, herbs, and tender spiced cuts.'
+      name: 'Saffron Table',
+      rating: '4.8',
+      cuisine: 'Indian · North Indian',
+      description: 'Familiar Indian flavors, thoughtfully reimagined for the modern table.',
+      offer: 'Up to ₹100 off',
+      price: '₹₹',
+      distance: '1.2 km away',
+      image: saffronTableImg,
+      sampleDishes: 'Paneer tikka · Dal makhani · Naan',
+      estimatedPrice: '₹619',
+      menu: [
+        { name: 'Saffron Paneer Tikka', price: '₹260', desc: 'Charred cottage cheese, saffron marinade, bell peppers' },
+        { name: 'Dal Makhani Slow Simmered', price: '₹210', desc: 'Overnight cooked black lentils with white butter' },
+        { name: 'Butter Garlic Naan (2 pcs)', price: '₹90', desc: 'Fresh tandoor-baked flatbread' },
+        { name: 'Dum Biryani Royale', price: '₹290', desc: 'Long grain fragrant rice with seasonal vegetables' }
+      ]
     },
     {
       id: 2,
-      title: 'Pani Puri Crisps',
-      category: 'Street Food',
-      prepTime: '20 mins',
-      rating: '4.8',
-      tag: 'Popular',
-      description: 'Crispy puffed hollow puris filled with tangy mint-coriander water, sweet tamarind, and spiced potatoes.'
+      name: 'Olive House',
+      rating: '4.7',
+      cuisine: 'Italian · Pizzeria',
+      description: 'A little corner of Italy with handmade pastas and really good pizza.',
+      offer: 'Up to ₹50 off',
+      price: '₹₹',
+      distance: '1.8 km away',
+      image: oliveHouseImg,
+      sampleDishes: 'Margherita · Garlic bread · Coke',
+      estimatedPrice: '₹600',
+      menu: [
+        { name: 'Classic Margherita Pizza', price: '₹340', desc: 'San Marzano tomatoes, fresh mozzarella, basil' },
+        { name: 'Handmade Fettuccine Alfredo', price: '₹310', desc: 'Creamy parmesan emulsion with cracked black pepper' },
+        { name: 'Herbed Garlic Bread', price: '₹140', desc: 'Toasted sourdough with roasted garlic butter' },
+        { name: 'Tiramisu Tradizionale', price: '₹190', desc: 'Espresso-soaked savoiardi, mascarpone cream' }
+      ]
     },
     {
       id: 3,
-      title: 'Shahi Kesar Kulfi',
-      category: 'Desserts',
-      prepTime: '15 mins',
-      rating: '5.0',
-      tag: 'Sweet Tooth',
-      description: 'Traditional slow-reduced milk kulfi infused with cardamom, saffron strands, and roasted pistachios.'
+      name: 'The Golden Hour',
+      rating: '4.9',
+      cuisine: 'Café · Breakfast',
+      description: 'Slow mornings, good coffee, and something lovely on your plate.',
+      offer: 'Up to ₹75 off',
+      price: '₹₹',
+      distance: '0.8 km away',
+      image: goldenHourImg,
+      sampleDishes: 'Avocado Toast · Croissant · Cappuccino',
+      estimatedPrice: '₹540',
+      menu: [
+        { name: 'Artisan Avocado Sourdough', price: '₹240', desc: 'Hass avocado mash, microgreens, soft boiled egg, seeds' },
+        { name: 'Butter Croissant', price: '₹120', desc: 'Flaky golden laminated pastry with French butter' },
+        { name: 'Specialty Rosetta Cappuccino', price: '₹160', desc: 'Double shot espresso with silky steamed whole milk' },
+        { name: 'Granola & Berry Parfait', price: '₹180', desc: 'Greek yogurt, wild blossom honey, toasted almonds' }
+      ]
     }
   ]
 
-  const filteredHighlights = activeCategory === 'All' 
-    ? tasteHighlights 
-    : tasteHighlights.filter((item) => item.category === activeCategory)
+  const toggleFavorite = (id) => {
+    setFavorites(prev => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  const toggleSelected = (id) => {
+    setSelectedForCompare(prev => ({ ...prev, [id]: !prev[id] }))
+  }
 
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-slate-100 flex flex-col justify-between selection:bg-amber-500 selection:text-white">
-      {/* Background Glows */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
-        <div className="absolute -top-40 -left-40 w-96 h-96 bg-amber-500/15 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-1/3 -right-40 w-96 h-96 bg-rose-500/15 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 left-1/3 w-96 h-96 bg-orange-600/15 rounded-full blur-3xl"></div>
-      </div>
+    <div className="min-h-screen bg-[#FAF8F5] text-neutral-900 flex flex-col font-sans selection:bg-[#85312C] selection:text-white">
+      {/* 1. TOP NAVBAR */}
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-neutral-200/70">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          {/* Logo & Navigation */}
+          <div className="flex items-center gap-10">
+            <a href="#" className="flex items-center gap-2 group">
+              <img
+                src={zaikaLogo}
+                alt="Zaika"
+                className="h-10 md:h-11 w-auto object-contain transition-transform group-hover:scale-102"
+              />
+            </a>
 
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#0b0f19]/80 border-b border-white/10">
-        <div className="max-w-6xl mx-auto px-6 h-18 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-rose-500 flex items-center justify-center text-xl shadow-lg shadow-amber-500/25">
-              🍲
-            </span>
-            <div>
-              <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-amber-300 via-orange-400 to-rose-400 bg-clip-text text-transparent">
-                Zaika
-              </span>
-              <span className="hidden sm:inline-block text-xs text-slate-400 ml-2 font-medium">
-                Find What Feels Delicious
-              </span>
-            </div>
+            <nav className="hidden md:flex items-center gap-8 text-[15px] font-medium text-neutral-700">
+              <a href="#discover" className="hover:text-[#85312C] transition-colors">
+                Discover
+              </a>
+              <a href="#compare" className="hover:text-[#85312C] transition-colors">
+                Compare
+              </a>
+              <a href="#favorites" className="hover:text-[#85312C] transition-colors">
+                Favorites
+              </a>
+            </nav>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-              Tailwind CSS v4 Active
-            </span>
-            <a
-              href="https://github.com"
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs font-medium px-3.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-colors"
+          {/* Right Action Icons & Buttons */}
+          <div className="flex items-center gap-4 md:gap-6">
+            <button
+              onClick={() => {
+                const el = document.getElementById('search-input')
+                el?.focus()
+                el?.scrollIntoView({ behavior: 'smooth' })
+              }}
+              className="text-neutral-700 hover:text-[#85312C] transition-colors p-1.5 cursor-pointer"
+              title="Search"
+              aria-label="Search"
             >
-              Docs & Setup
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
+              </svg>
+            </button>
+
+            <button
+              onClick={() => setIsLoginOpen(true)}
+              className="text-neutral-700 hover:text-[#85312C] transition-colors p-1.5 cursor-pointer"
+              title="Account"
+              aria-label="Account"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </button>
+
+            <button
+              onClick={() => setIsLoginOpen(true)}
+              className="hidden sm:inline-block text-[14px] font-medium text-neutral-800 hover:text-[#85312C] transition-colors cursor-pointer"
+            >
+              Log in
+            </button>
+
+            <a
+              href="#compare"
+              className="inline-flex items-center gap-2 bg-[#85312C] hover:bg-[#702622] text-white text-[14px] font-medium px-4 py-2 rounded-lg shadow-sm transition-all duration-200 cursor-pointer"
+            >
+              <span>Compare menus</span>
+              <span className="text-base leading-none">→</span>
             </a>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <main className="max-w-6xl mx-auto px-6 py-12 flex-1 w-full space-y-16">
-        <section className="text-center max-w-3xl mx-auto pt-6 space-y-6">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-medium tracking-wide">
-            ✨ React + Vite + Tailwind CSS v4 Starter Ready
-          </div>
+      {/* 2. HERO SECTION */}
+      <section className="relative min-h-[580px] lg:min-h-[620px] flex items-center overflow-hidden">
+        {/* Background Image with Cinematic Gradient Overlay */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src={heroBg}
+            alt="Lavish dining table"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/65 to-black/35" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+        </div>
 
-          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-tight">
-            Find What Feels{' '}
-            <span className="bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 bg-clip-text text-transparent">
-              Delicious
-            </span>
-          </h1>
-
-          <p className="text-slate-300 text-lg leading-relaxed max-w-2xl mx-auto">
-            Your client workspace is configured with high-performance modern tooling. Explore authentic recipes, culinary inspirations, and responsive UI components powered by Tailwind CSS v4.
-          </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
-            <button
-              onClick={handleLike}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-lg flex items-center gap-2 cursor-pointer ${
-                hasLiked
-                  ? 'bg-rose-500 text-white shadow-rose-500/30 scale-105'
-                  : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold shadow-amber-500/20 hover:scale-105'
-              }`}
-            >
-              <span>{hasLiked ? '❤️ Liked' : '🤍 Taste Explorer'}</span>
-              <span className="px-2 py-0.5 rounded-md bg-black/20 text-xs font-mono">
-                {likes}
+        {/* Hero Content */}
+        <div className="relative z-10 max-w-7xl mx-auto px-6 py-16 md:py-24 w-full">
+          <div className="max-w-2xl">
+            {/* Eyebrow */}
+            <div className="inline-block border-b border-white/40 pb-1 mb-5">
+              <span className="text-[11px] md:text-[12px] font-semibold tracking-[0.2em] uppercase text-white/90">
+                GOOD FOOD, BETTER DECISIONS • ZAIKA
               </span>
-            </button>
+            </div>
 
-            <a
-              href="#recipes"
-              className="px-6 py-3 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-200 border border-slate-700/60 font-medium transition-all duration-200 hover:border-slate-500"
-            >
-              Explore Recipes
-            </a>
-          </div>
-        </section>
+            {/* Title */}
+            <h1 className="font-serif text-4xl sm:text-5xl md:text-[62px] text-white font-normal leading-[1.12] tracking-tight mb-5">
+              Find your next favorite place to eat.
+            </h1>
 
-        {/* Tech Stack Cards */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {features.map((item) => (
-            <div
-              key={item.title}
-              className={`relative rounded-2xl p-6 bg-gradient-to-br ${item.gradient} bg-[#131929]/70 border ${item.border} backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl`}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-white">{item.title}</h3>
-                <span className={`text-xs px-2.5 py-1 rounded-md font-medium border ${item.badgeBg}`}>
-                  {item.tag}
-                </span>
+            {/* Subheading */}
+            <p className="text-white/85 text-base sm:text-lg font-normal leading-relaxed mb-8 max-w-xl">
+              Discover restaurants, explore menus, and compare what you can actually get for your budget.
+            </p>
+
+            {/* Search Box */}
+            <div className="bg-white rounded-xl p-1.5 shadow-2xl flex items-center max-w-xl border border-white/20 transition-all focus-within:ring-2 focus-within:ring-[#85312C]/50">
+              <div className="pl-3.5 pr-2 text-neutral-400">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
+                </svg>
               </div>
-              <p className="text-slate-300 text-sm leading-relaxed">{item.desc}</p>
+              <input
+                id="search-input"
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Try: Italian dinner for 2 under ₹1500"
+                className="w-full bg-transparent text-neutral-900 placeholder:text-neutral-400 text-sm md:text-[15px] outline-none font-normal py-2"
+              />
+              <button
+                onClick={() => {
+                  const shortlist = document.getElementById('shortlist')
+                  shortlist?.scrollIntoView({ behavior: 'smooth' })
+                }}
+                className="bg-[#85312C] hover:bg-[#702622] text-white px-5 py-2.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap shadow-sm cursor-pointer ml-2"
+              >
+                <span>Explore</span>
+                <span className="text-base leading-none">→</span>
+              </button>
             </div>
-          ))}
-        </section>
 
-        {/* Recipe / Taste Explorer Demo */}
-        <section id="recipes" className="space-y-6 pt-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
-            <div>
-              <h2 className="text-2xl font-bold text-white">Taste Preview</h2>
-              <p className="text-slate-400 text-sm">Sample recipe cards styled exclusively with Tailwind CSS</p>
-            </div>
-
-            {/* Category Filter Pills */}
-            <div className="flex flex-wrap gap-2">
-              {categories.map((cat) => (
+            {/* Quick Filter Tags */}
+            <div className="mt-5 flex flex-wrap items-center gap-2 text-xs">
+              <span className="text-white/75 font-normal mr-1">Try searching:</span>
+              {quickSearches.map((tag) => (
                 <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer ${
-                    activeCategory === cat
-                      ? 'bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20'
-                      : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/5'
-                  }`}
+                  key={tag}
+                  onClick={() => setSearchQuery(tag)}
+                  className="bg-black/40 hover:bg-black/60 border border-white/20 backdrop-blur-md text-white/95 px-3 py-1.5 rounded-md transition-colors cursor-pointer"
                 >
-                  {cat}
+                  {tag}
                 </button>
               ))}
             </div>
           </div>
+        </div>
+      </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {filteredHighlights.map((recipe) => (
+      {/* 3. VALUE PROPOSITION BANNER (Pale Ivory/Cream Strip) */}
+      <section className="bg-[#FAF4DC] border-y border-[#EDE3C4]/70 py-4 px-6">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-x-10 md:gap-x-16 gap-y-3 text-[14px] text-neutral-800">
+          {/* Feature 1 */}
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-[#85312C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="7" strokeWidth="2" />
+              <path strokeWidth="2" strokeLinecap="round" d="M16 16l4 4" />
+            </svg>
+            <span>
+              <strong className="font-semibold text-neutral-900">Discover</strong> places made for your plans
+            </span>
+          </div>
+
+          {/* Feature 2 */}
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-[#85312C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M3 12h18M3 18h18" />
+              <circle cx="8" cy="6" r="2" fill="#85312C" />
+              <circle cx="16" cy="12" r="2" fill="#85312C" />
+              <circle cx="10" cy="18" r="2" fill="#85312C" />
+            </svg>
+            <span>
+              <strong className="font-semibold text-neutral-900">Compare</strong> menus and real prices
+            </span>
+          </div>
+
+          {/* Feature 3 */}
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-[#85312C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>
+              <strong className="font-semibold text-neutral-900">Decide</strong> with total confidence
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. THE SHORTLIST SECTION (Restaurant Cards) */}
+      <section id="shortlist" className="max-w-7xl mx-auto px-6 py-14 w-full">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+          <div>
+            <span className="text-[11px] font-bold tracking-[0.2em] text-[#85312C] uppercase block mb-1">
+              THE SHORTLIST
+            </span>
+            <h2 className="font-serif text-3xl sm:text-4xl text-neutral-900 font-normal">
+              Worth going out for.
+            </h2>
+            <p className="text-neutral-600 text-[15px] mt-1">
+              Good places, good food, and something for every kind of craving.
+            </p>
+          </div>
+
+          <a
+            href="#shortlist"
+            className="inline-flex items-center gap-2 border border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-800 text-sm font-medium px-4 py-2.5 rounded-lg transition-colors shadow-sm self-start sm:self-auto cursor-pointer"
+          >
+            <span>Explore all places</span>
+            <span className="text-base leading-none">→</span>
+          </a>
+        </div>
+
+        {/* 3 Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {restaurants.map((restaurant) => {
+            const isFav = favorites[restaurant.id]
+            const isSelected = selectedForCompare[restaurant.id]
+
+            return (
               <div
-                key={recipe.id}
-                className="group rounded-2xl overflow-hidden bg-[#13192b]/80 border border-white/10 hover:border-amber-500/40 transition-all duration-300 hover:shadow-2xl hover:shadow-amber-500/10 flex flex-col justify-between p-5"
+                key={restaurant.id}
+                className="bg-white rounded-2xl border border-neutral-200/80 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col group"
               >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 font-medium">
-                      {recipe.category}
-                    </span>
-                    <span className="text-amber-300 font-semibold flex items-center gap-1">
-                      ★ {recipe.rating}
-                    </span>
+                {/* Image Container with Badges */}
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-100">
+                  <img
+                    src={restaurant.image}
+                    alt={restaurant.name}
+                    className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
+                  />
+
+                  {/* Favorite Toggle Button */}
+                  <button
+                    onClick={() => toggleFavorite(restaurant.id)}
+                    className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-neutral-700 hover:text-rose-600 hover:bg-white shadow-sm transition-all cursor-pointer"
+                    aria-label="Save to favorites"
+                  >
+                    <svg
+                      className={`w-5 h-5 transition-colors ${
+                        isFav ? 'fill-rose-500 text-rose-500' : 'fill-none stroke-current'
+                      }`}
+                      viewBox="0 0 24 24"
+                      strokeWidth="1.8"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+                      />
+                    </svg>
+                  </button>
+
+                  {/* Offer Badge */}
+                  <div className="absolute bottom-3 left-3 bg-[#FAF1E8] text-[#85312C] text-xs font-semibold px-2.5 py-1 rounded-md shadow-sm border border-[#F3E2D4]">
+                    {restaurant.offer}
+                  </div>
+                </div>
+
+                {/* Card Content */}
+                <div className="p-5 flex-1 flex flex-col justify-between">
+                  <div>
+                    {/* Title & Rating */}
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="font-serif text-xl font-normal text-neutral-900 group-hover:text-[#85312C] transition-colors">
+                        {restaurant.name}
+                      </h3>
+                      <div className="flex items-center gap-1 text-sm font-semibold text-neutral-800">
+                        <span className="text-amber-500">★</span>
+                        <span>{restaurant.rating}</span>
+                      </div>
+                    </div>
+
+                    {/* Cuisine */}
+                    <p className="text-xs text-neutral-500 mt-1 font-normal">
+                      {restaurant.cuisine}
+                    </p>
+
+                    {/* Description */}
+                    <p className="text-neutral-600 text-sm mt-3 leading-relaxed">
+                      {restaurant.description}
+                    </p>
                   </div>
 
-                  <h4 className="text-lg font-bold text-white group-hover:text-amber-300 transition-colors">
-                    {recipe.title}
-                  </h4>
+                  {/* Bottom Meta & Action Buttons */}
+                  <div className="mt-5 pt-3 border-t border-neutral-100">
+                    {/* Price and Distance Row */}
+                    <div className="flex items-center gap-3 text-xs text-neutral-500 mb-3.5 font-normal">
+                      <span>{restaurant.price}</span>
+                      <span className="flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        {restaurant.distance}
+                      </span>
+                    </div>
 
-                  <p className="text-slate-300 text-sm leading-relaxed">
-                    {recipe.description}
-                  </p>
-                </div>
+                    {/* Action Buttons Row */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setActiveModal(restaurant)}
+                        className="flex-1 border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-800 text-xs font-medium py-2 px-3 rounded-lg flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                      >
+                        <span>View menu</span>
+                        <span className="text-sm">→</span>
+                      </button>
 
-                <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between text-xs text-slate-400">
-                  <span className="flex items-center gap-1">
-                    ⏱ {recipe.prepTime}
-                  </span>
-                  <span className="text-orange-400 font-medium">{recipe.tag}</span>
+                      <button
+                        onClick={() => toggleSelected(restaurant.id)}
+                        className={`flex-1 text-xs font-semibold py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#F6EEBE] hover:bg-[#ECE3AD] text-neutral-900'
+                            : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-700'
+                        }`}
+                      >
+                        <span>✓</span>
+                        <span>{isSelected ? 'Selected' : 'Select'}</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-        </section>
+            )
+          })}
+        </div>
+      </section>
 
-        {/* Quick Start Guide */}
-        <section className="rounded-2xl bg-gradient-to-r from-slate-900/90 to-slate-950/90 border border-white/10 p-6 md:p-8 space-y-4">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">⚡</span>
-            <h3 className="text-lg font-bold text-white">Next Steps to Develop</h3>
+      {/* 5. THE ZAIKA WAY (Burgundy Comparison Section) */}
+      <section id="compare" className="bg-[#85312C] text-white py-16 px-6">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          {/* Left Text Column */}
+          <div>
+            <span className="text-[11px] font-bold tracking-[0.2em] text-[#F8C8BF] uppercase block">
+              THE ZAIKA WAY
+            </span>
+            <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-normal leading-tight mt-3 text-white">
+              Know the bill before the first bite.
+            </h2>
+            <p className="text-white/85 text-base md:text-lg font-light leading-relaxed mt-4 max-w-lg">
+              Pick two places. Choose the dishes you actually want. We'll put the menus, offers and final totals side by side.
+            </p>
+            <button
+              onClick={() => {
+                const el = document.getElementById('shortlist')
+                el?.scrollIntoView({ behavior: 'smooth' })
+              }}
+              className="mt-8 inline-flex items-center gap-2 bg-[#F6EEBE] hover:bg-[#ECE3AD] text-[#3A1412] px-5 py-2.5 rounded-lg text-sm font-semibold shadow-md transition-colors cursor-pointer"
+            >
+              <span>Compare menus</span>
+              <span className="text-base leading-none">→</span>
+            </button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm font-mono">
-            <div className="p-3.5 rounded-xl bg-black/40 border border-white/5 text-slate-300">
-              <span className="text-slate-500 block text-xs mb-1">1. Navigate to client</span>
-              <code>cd client</code>
-            </div>
-            <div className="p-3.5 rounded-xl bg-black/40 border border-white/5 text-slate-300">
-              <span className="text-slate-500 block text-xs mb-1">2. Start Dev Server</span>
-              <code>npm run dev</code>
-            </div>
-            <div className="p-3.5 rounded-xl bg-black/40 border border-white/5 text-slate-300">
-              <span className="text-slate-500 block text-xs mb-1">3. Build for Production</span>
-              <code>npm run build</code>
-            </div>
-          </div>
-        </section>
-      </main>
 
-      {/* Footer */}
-      <footer className="border-t border-white/10 py-6 text-center text-xs text-slate-500">
-        <p>Zaika — Find What Feels Delicious • React + Vite + Tailwind CSS v4</p>
+          {/* Right Comparison Card */}
+          <div className="bg-white text-neutral-900 rounded-2xl p-6 md:p-7 shadow-2xl max-w-md w-full ml-auto">
+            {/* Header row */}
+            <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+              <span className="text-sm font-semibold text-neutral-900">
+                Tonight's options
+              </span>
+              <span className="text-xs text-neutral-500 font-normal">
+                For 2 people · under ₹1,500
+              </span>
+            </div>
+
+            {/* Option 1: Saffron Table */}
+            <div className="border border-neutral-200/90 rounded-xl p-4 mt-4 bg-white hover:border-[#85312C]/40 transition-colors">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h4 className="text-sm font-semibold text-neutral-900">
+                    Saffron Table
+                  </h4>
+                  <p className="text-xs text-neutral-500 mt-0.5">
+                    Paneer tikka · Dal makhani · Naan
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span className="font-serif font-normal text-xl text-[#85312C] leading-none block">
+                    ₹619
+                  </span>
+                  <span className="text-[10px] text-neutral-400 uppercase tracking-wider block mt-0.5">
+                    est. total
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Option 2: Olive House */}
+            <div className="border border-neutral-200/90 rounded-xl p-4 mt-3 bg-white hover:border-[#85312C]/40 transition-colors">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h4 className="text-sm font-semibold text-neutral-900">
+                    Olive House
+                  </h4>
+                  <p className="text-xs text-neutral-500 mt-0.5">
+                    Margherita · Garlic bread · Coke
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span className="font-serif font-normal text-xl text-[#85312C] leading-none block">
+                    ₹600
+                  </span>
+                  <span className="text-[10px] text-neutral-400 uppercase tracking-wider block mt-0.5">
+                    est. total
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Tag */}
+            <div className="flex items-center gap-1.5 text-[#85312C] text-xs font-semibold mt-5">
+              <span>★</span>
+              <span>Real menus. Clearer choices.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. CURATED FOR YOU */}
+      <section className="max-w-7xl mx-auto px-6 py-14 w-full">
+        <span className="text-[11px] font-bold tracking-[0.2em] text-[#85312C] uppercase block mb-1">
+          CURATED FOR YOU
+        </span>
+        <h2 className="font-serif text-3xl sm:text-4xl text-neutral-900 font-normal mb-8">
+          Whatever you're in the mood for.
+        </h2>
+
+        {/* 3 Mood Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Card 1: Italian */}
+          <div
+            onClick={() => setSearchQuery('Italian')}
+            className="group relative h-60 md:h-64 rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all"
+          >
+            <img
+              src={oliveHouseImg}
+              alt="An Italian evening"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+            <div className="absolute inset-x-5 bottom-5 flex items-center justify-between text-white font-serif text-xl font-normal">
+              <span>An Italian evening</span>
+              <span className="text-xl group-hover:translate-x-1.5 transition-transform">→</span>
+            </div>
+          </div>
+
+          {/* Card 2: Coffee */}
+          <div
+            onClick={() => setSearchQuery('Coffee')}
+            className="group relative h-60 md:h-64 rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all"
+          >
+            <img
+              src={goldenHourImg}
+              alt="Coffee & a little time"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+            <div className="absolute inset-x-5 bottom-5 flex items-center justify-between text-white font-serif text-xl font-normal">
+              <span>Coffee & a little time</span>
+              <span className="text-xl group-hover:translate-x-1.5 transition-transform">→</span>
+            </div>
+          </div>
+
+          {/* Card 3: Comfort Food */}
+          <div
+            onClick={() => setSearchQuery('Comfort food')}
+            className="group relative h-60 md:h-64 rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-xl transition-all"
+          >
+            <img
+              src={saffronTableImg}
+              alt="Comfort food classics"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+            <div className="absolute inset-x-5 bottom-5 flex items-center justify-between text-white font-serif text-xl font-normal">
+              <span>Comfort food classics</span>
+              <span className="text-xl group-hover:translate-x-1.5 transition-transform">→</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 7. FOOTER */}
+      <footer className="bg-[#FAF5EA] border-t border-[#EFE8D6] py-12 px-6 mt-auto">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          {/* Logo and Tagline */}
+          <div>
+            <a href="#" className="inline-block">
+              <img
+                src={zaikaLogo}
+                alt="Zaika"
+                className="h-8 md:h-9 w-auto object-contain"
+              />
+            </a>
+            <p className="text-xs text-neutral-600 mt-2 font-normal">
+              Discover. Compare. Decide. Eat.
+            </p>
+          </div>
+
+          {/* Navigation Links */}
+          <div className="flex flex-wrap items-center gap-6 md:gap-8 text-xs md:text-sm text-neutral-700 font-medium">
+            <a href="#discover" className="hover:text-[#85312C] transition-colors">
+              Discover
+            </a>
+            <a href="#compare" className="hover:text-[#85312C] transition-colors">
+              Compare
+            </a>
+            <a href="#favorites" className="hover:text-[#85312C] transition-colors">
+              Favorites
+            </a>
+            <a href="#for-restaurants" className="hover:text-[#85312C] transition-colors">
+              For restaurants
+            </a>
+          </div>
+        </div>
       </footer>
+
+      {/* MODAL: Menu Viewer */}
+      {activeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative border border-neutral-100">
+            <button
+              onClick={() => setActiveModal(null)}
+              className="absolute top-4 right-4 text-neutral-400 hover:text-neutral-700 text-xl font-bold w-8 h-8 rounded-full flex items-center justify-center hover:bg-neutral-100 transition-colors"
+            >
+              ✕
+            </button>
+
+            <div className="flex items-center gap-4 mb-4">
+              <img
+                src={activeModal.image}
+                alt={activeModal.name}
+                className="w-16 h-16 rounded-xl object-cover"
+              />
+              <div>
+                <h3 className="font-serif text-2xl font-normal text-neutral-900">
+                  {activeModal.name}
+                </h3>
+                <p className="text-xs text-neutral-500">{activeModal.cuisine} · {activeModal.distance}</p>
+              </div>
+            </div>
+
+            <h4 className="text-xs font-bold uppercase tracking-wider text-[#85312C] mb-3">
+              Highlighted Menu
+            </h4>
+
+            <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+              {activeModal.menu.map((dish, i) => (
+                <div key={i} className="flex items-start justify-between p-3 rounded-xl bg-neutral-50 border border-neutral-100">
+                  <div>
+                    <h5 className="text-sm font-semibold text-neutral-900">{dish.name}</h5>
+                    <p className="text-xs text-neutral-500 mt-0.5">{dish.desc}</p>
+                  </div>
+                  <span className="font-serif font-semibold text-neutral-900 text-sm ml-3">
+                    {dish.price}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-5 pt-4 border-t border-neutral-100 flex items-center justify-between">
+              <span className="text-xs text-neutral-500">Average cost for two: <strong className="text-neutral-900 font-semibold">{activeModal.estimatedPrice}</strong></span>
+              <button
+                onClick={() => setActiveModal(null)}
+                className="bg-[#85312C] text-white text-xs font-medium px-4 py-2 rounded-lg hover:bg-[#702622] transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Login */}
+      {isLoginOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl relative border border-neutral-100 text-center">
+            <button
+              onClick={() => setIsLoginOpen(false)}
+              className="absolute top-4 right-4 text-neutral-400 hover:text-neutral-700 text-xl font-bold w-8 h-8 rounded-full flex items-center justify-center hover:bg-neutral-100 transition-colors"
+            >
+              ✕
+            </button>
+
+            <img src={zaikaLogo} alt="Zaika" className="h-10 mx-auto mb-4 object-contain" />
+            <h3 className="font-serif text-2xl font-normal text-neutral-900 mb-1">
+              Welcome to Zaika
+            </h3>
+            <p className="text-xs text-neutral-500 mb-6">
+              Sign in to save favorite spots and compare menus with live prices.
+            </p>
+
+            <div className="space-y-3">
+              <input
+                type="email"
+                placeholder="Email address"
+                className="w-full px-4 py-2.5 rounded-lg border border-neutral-200 text-sm outline-none focus:border-[#85312C]"
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                className="w-full px-4 py-2.5 rounded-lg border border-neutral-200 text-sm outline-none focus:border-[#85312C]"
+              />
+              <button
+                onClick={() => setIsLoginOpen(false)}
+                className="w-full bg-[#85312C] hover:bg-[#702622] text-white text-sm font-semibold py-2.5 rounded-lg transition-colors cursor-pointer"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
-
-export default App
