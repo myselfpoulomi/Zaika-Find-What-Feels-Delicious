@@ -214,7 +214,11 @@ const ALL_RESTAURANTS = [
 export default function DiscoverPage({
   setCurrentPage: _setCurrentPage,
   initialQuery = '',
-  onAddRecentSearch
+  onAddRecentSearch,
+  favorites: externalFavorites,
+  onToggleFavorite: externalOnToggleFavorite,
+  selectedForCompare: externalSelectedForCompare,
+  onToggleCompare: externalOnToggleCompare
 }) {
   const [searchQuery, setSearchQuery] = useState(initialQuery)
   const [selectedCity, setSelectedCity] = useState('Bengaluru')
@@ -225,7 +229,7 @@ export default function DiscoverPage({
   const [distanceFilter, setDistanceFilter] = useState('Any distance')
 
   // Selected for comparison mapping
-  const [selectedForCompare, setSelectedForCompare] = useState({
+  const [internalSelectedForCompare, setInternalSelectedForCompare] = useState({
     1: true,
     2: true,
     3: true,
@@ -237,9 +241,10 @@ export default function DiscoverPage({
     9: false,
     10: false
   })
+  const selectedForCompare = externalSelectedForCompare !== undefined ? externalSelectedForCompare : internalSelectedForCompare
 
   // Favorites mapping
-  const [favorites, setFavorites] = useState({
+  const [internalFavorites, setInternalFavorites] = useState({
     1: false,
     2: false,
     3: false,
@@ -251,6 +256,7 @@ export default function DiscoverPage({
     9: false,
     10: false
   })
+  const favorites = externalFavorites !== undefined ? externalFavorites : internalFavorites
 
   const [activeMenuModal, setActiveMenuModal] = useState(null)
 
@@ -315,11 +321,19 @@ export default function DiscoverPage({
   ])
 
   const toggleSelected = (id) => {
-    setSelectedForCompare((prev) => ({ ...prev, [id]: !prev[id] }))
+    if (externalOnToggleCompare) {
+      externalOnToggleCompare(id)
+    } else {
+      setInternalSelectedForCompare((prev) => ({ ...prev, [id]: !prev[id] }))
+    }
   }
 
   const toggleFavorite = (id) => {
-    setFavorites((prev) => ({ ...prev, [id]: !prev[id] }))
+    if (externalOnToggleFavorite) {
+      externalOnToggleFavorite(id)
+    } else {
+      setInternalFavorites((prev) => ({ ...prev, [id]: !prev[id] }))
+    }
   }
 
   const handleSearchSubmit = (e) => {

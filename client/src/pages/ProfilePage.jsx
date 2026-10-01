@@ -186,13 +186,7 @@ export default function ProfilePage({
           <div className="lg:col-span-5 space-y-4">
             {/* Item 1: Saved restaurants */}
             <button
-              onClick={() => {
-                setCurrentPage('home')
-                setTimeout(() => {
-                  const el = document.getElementById('shortlist')
-                  el?.scrollIntoView({ behavior: 'smooth' })
-                }, 100)
-              }}
+              onClick={() => setCurrentPage('favorites')}
               className="w-full flex items-center justify-between py-3.5 border-b border-neutral-200/90 hover:text-[#85312C] transition-colors group cursor-pointer text-left bg-transparent border-t-0 border-x-0"
             >
               <div className="flex items-center gap-3">

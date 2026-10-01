@@ -54,8 +54,12 @@ export default function Navbar({
               Compare
             </button>
             <button
-              onClick={() => handleNavClick('#shortlist')}
-              className="hover:text-[#85312C] transition-colors cursor-pointer bg-transparent border-0 p-0 text-[15px] font-medium text-neutral-700"
+              onClick={() => setCurrentPage('favorites')}
+              className={`transition-colors cursor-pointer bg-transparent border-0 p-0 text-[15px] font-medium ${
+                currentPage === 'favorites'
+                  ? 'text-[#85312C] font-semibold'
+                  : 'text-neutral-700 hover:text-[#85312C]'
+              }`}
             >
               Favorites
             </button>

@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import ProfilePage from './pages/ProfilePage'
 import DiscoverPage from './pages/DiscoverPage'
+import FavoritesPage from './pages/FavoritesPage'
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState(() => {
@@ -14,6 +15,7 @@ export default function App() {
     if (hash === '#/signup') return 'signup'
     if (hash === '#/profile') return 'profile'
     if (hash === '#/discover') return 'discover'
+    if (hash === '#/favorites') return 'favorites'
     return 'home'
   })
 
@@ -24,6 +26,21 @@ export default function App() {
     } catch {
       return null
     }
+  })
+
+  const [favorites, setFavorites] = useState(() => {
+    try {
+      const saved = localStorage.getItem('zaika_favorites')
+      return saved ? JSON.parse(saved) : {}
+    } catch {
+      return {}
+    }
+  })
+
+  const [selectedForCompare, setSelectedForCompare] = useState({
+    1: true,
+    2: true,
+    3: true
   })
 
   const [recentSearches, setRecentSearches] = useState(() => {
@@ -59,6 +76,8 @@ export default function App() {
         setCurrentPage('profile')
       } else if (hash === '#/discover') {
         setCurrentPage('discover')
+      } else if (hash === '#/favorites') {
+        setCurrentPage('favorites')
       } else if (hash === '#/' || hash === '' || hash.startsWith('#')) {
         if (hash === '#/home' || hash === '#/' || hash === '') {
           setCurrentPage('home')
@@ -80,10 +99,28 @@ export default function App() {
       window.location.hash = '#/profile'
     } else if (page === 'discover') {
       window.location.hash = '#/discover'
+    } else if (page === 'favorites') {
+      window.location.hash = '#/favorites'
     } else {
       window.location.hash = '#/'
     }
     window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleToggleFavorite = (id) => {
+    setFavorites((prev) => {
+      const updated = { ...prev, [id]: !prev[id] }
+      try {
+        localStorage.setItem('zaika_favorites', JSON.stringify(updated))
+      } catch (e) {
+        console.error(e)
+      }
+      return updated
+    })
+  }
+
+  const handleToggleCompare = (id) => {
+    setSelectedForCompare((prev) => ({ ...prev, [id]: !prev[id] }))
   }
 
   const handleAddRecentSearch = (query) => {
@@ -177,6 +214,10 @@ export default function App() {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           onAddRecentSearch={handleAddRecentSearch}
+          favorites={favorites}
+          onToggleFavorite={handleToggleFavorite}
+          selectedForCompare={selectedForCompare}
+          onToggleCompare={handleToggleCompare}
         />
       )}
 
@@ -185,6 +226,20 @@ export default function App() {
           setCurrentPage={navigateTo}
           initialQuery={searchQuery}
           onAddRecentSearch={handleAddRecentSearch}
+          favorites={favorites}
+          onToggleFavorite={handleToggleFavorite}
+          selectedForCompare={selectedForCompare}
+          onToggleCompare={handleToggleCompare}
+        />
+      )}
+
+      {currentPage === 'favorites' && (
+        <FavoritesPage
+          setCurrentPage={navigateTo}
+          favorites={favorites}
+          onToggleFavorite={handleToggleFavorite}
+          selectedForCompare={selectedForCompare}
+          onToggleCompare={handleToggleCompare}
         />
       )}
 

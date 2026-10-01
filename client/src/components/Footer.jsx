@@ -46,7 +46,7 @@ export default function Footer({ setCurrentPage }) {
             Compare
           </button>
           <button
-            onClick={() => handleNavClick('#shortlist')}
+            onClick={() => setCurrentPage('favorites')}
             className="hover:text-[#85312C] transition-colors bg-transparent border-0 p-0 text-xs md:text-sm text-neutral-700 font-medium cursor-pointer"
           >
             Favorites

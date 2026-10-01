@@ -8,7 +8,11 @@ export default function HomePage({
   setCurrentPage,
   searchQuery: externalSearchQuery,
   setSearchQuery: externalSetSearchQuery,
-  onAddRecentSearch
+  onAddRecentSearch,
+  favorites: externalFavorites,
+  onToggleFavorite: externalOnToggleFavorite,
+  selectedForCompare: externalSelectedForCompare,
+  onToggleCompare: externalOnToggleCompare
 }) {
   const [internalSearchQuery, setInternalSearchQuery] = useState('')
   const searchQuery = externalSearchQuery !== undefined ? externalSearchQuery : internalSearchQuery
@@ -23,8 +27,11 @@ export default function HomePage({
     shortlist?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const [favorites, setFavorites] = useState({ 1: false, 2: false, 3: false })
-  const [selectedForCompare, setSelectedForCompare] = useState({ 1: true, 2: true, 3: true })
+  const [internalFavorites, setInternalFavorites] = useState({ 1: false, 2: false, 3: false })
+  const favorites = externalFavorites !== undefined ? externalFavorites : internalFavorites
+
+  const [internalSelectedForCompare, setInternalSelectedForCompare] = useState({ 1: true, 2: true, 3: true })
+  const selectedForCompare = externalSelectedForCompare !== undefined ? externalSelectedForCompare : internalSelectedForCompare
   const [activeModal, setActiveModal] = useState(null)
 
   const quickSearches = [
@@ -97,11 +104,19 @@ export default function HomePage({
   ]
 
   const toggleFavorite = (id) => {
-    setFavorites(prev => ({ ...prev, [id]: !prev[id] }))
+    if (externalOnToggleFavorite) {
+      externalOnToggleFavorite(id)
+    } else {
+      setInternalFavorites(prev => ({ ...prev, [id]: !prev[id] }))
+    }
   }
 
   const toggleSelected = (id) => {
-    setSelectedForCompare(prev => ({ ...prev, [id]: !prev[id] }))
+    if (externalOnToggleCompare) {
+      externalOnToggleCompare(id)
+    } else {
+      setInternalSelectedForCompare(prev => ({ ...prev, [id]: !prev[id] }))
+    }
   }
 
   return (
