@@ -57,32 +57,8 @@ export default function Navbar({
           </nav>
         </div>
 
-        {/* Right: Search, Profile Icon Button (Navigates to /profile), (Log in if guest), Compare Button */}
+        {/* Right: Profile Icon Button (Navigates to /profile), (Log in if guest), Compare Button */}
         <div className="flex items-center gap-4 md:gap-6">
-          <button
-            onClick={() => {
-              if (currentPage !== 'home') {
-                setCurrentPage('home')
-                setTimeout(() => {
-                  const el = document.getElementById('search-input')
-                  el?.focus()
-                  el?.scrollIntoView({ behavior: 'smooth' })
-                }, 100)
-              } else {
-                const el = document.getElementById('search-input')
-                el?.focus()
-                el?.scrollIntoView({ behavior: 'smooth' })
-              }
-            }}
-            className="text-neutral-700 hover:text-[#85312C] transition-colors p-1.5 cursor-pointer"
-            title="Search"
-            aria-label="Search"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
-            </svg>
-          </button>
-
           {/* User Icon Button: Navigates directly to Profile Page Route */}
           <button
             onClick={() => setCurrentPage('profile')}
