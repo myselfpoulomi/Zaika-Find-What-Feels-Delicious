@@ -12,17 +12,24 @@ export const ALL_RESTAURANTS = [
     cuisineType: 'Indian',
     description: 'Familiar Indian flavors, thoughtfully reimagined for the modern table.',
     offer: 'Up to ₹100 off',
+    offerAmount: 100,
     price: '₹₹',
     budgetCategory: 'mid',
     distance: '1.2 km away',
     distanceKm: 1.2,
     image: saffronTableImg,
     isVeg: true,
+    ambiance: 'Warm heritage candlelight, acoustic sitar & lounge jazz, romantic courtyard seating.',
+    ambianceTags: ['Romantic & Candlelit Date', 'Warm Family Gathering', 'Casual Friends Hangout'],
+    signatureDish: 'Dal Makhani Slow Simmered',
     menu: [
-      { name: 'Saffron Paneer Tikka', price: '₹260', desc: 'Charred cottage cheese, saffron marinade, bell peppers' },
-      { name: 'Dal Makhani Slow Simmered', price: '₹210', desc: 'Overnight cooked black lentils with white butter' },
-      { name: 'Butter Garlic Naan (2 pcs)', price: '₹90', desc: 'Fresh tandoor-baked flatbread' },
-      { name: 'Dum Biryani Royale', price: '₹290', desc: 'Long grain fragrant rice with seasonal vegetables' }
+      { name: 'Saffron Paneer Tikka', price: '₹260', priceNum: 260, category: 'starter', desc: 'Charred cottage cheese, saffron marinade, bell peppers' },
+      { name: 'Dal Makhani Slow Simmered', price: '₹210', priceNum: 210, category: 'main', desc: 'Overnight cooked black lentils with white butter' },
+      { name: 'Butter Garlic Naan (2 pcs)', price: '₹90', priceNum: 90, category: 'bread', desc: 'Fresh tandoor-baked flatbread' },
+      { name: 'Dum Biryani Royale', price: '₹290', priceNum: 290, category: 'main', desc: 'Long grain fragrant rice with seasonal vegetables' },
+      { name: 'Saffron Cardamom Lassi', price: '₹140', priceNum: 140, category: 'drink', desc: 'Creamy yogurt infused with pure Kashmiri saffron' },
+      { name: 'Smoked Tamarind Cooler', price: '₹160', priceNum: 160, category: 'drink', desc: 'Tangy roasted tamarind, cumin, sparkling soda' },
+      { name: 'Gulab Jamun with Rabri', price: '₹130', priceNum: 130, category: 'dessert', desc: 'Warm milk dumplings soaked in cardamom syrup' }
     ]
   },
   {
@@ -33,17 +40,24 @@ export const ALL_RESTAURANTS = [
     cuisineType: 'Italian',
     description: 'A little corner of Italy with handmade pastas and really good pizza.',
     offer: 'Up to ₹50 off',
+    offerAmount: 50,
     price: '₹₹',
     budgetCategory: 'mid',
     distance: '1.8 km away',
     distanceKm: 1.8,
     image: oliveHouseImg,
     isVeg: false,
+    ambiance: 'Cozy rustic Italian trattoria, fairy lights, warm wooden tables, intimate date vibe.',
+    ambianceTags: ['Romantic & Candlelit Date', 'Casual Friends Hangout', 'Sophisticated Fine Dining'],
+    signatureDish: 'Classic Margherita Pizza',
     menu: [
-      { name: 'Classic Margherita Pizza', price: '₹340', desc: 'San Marzano tomatoes, fresh mozzarella, basil' },
-      { name: 'Handmade Fettuccine Alfredo', price: '₹310', desc: 'Creamy parmesan emulsion with cracked black pepper' },
-      { name: 'Herbed Garlic Bread', price: '₹140', desc: 'Toasted sourdough with roasted garlic butter' },
-      { name: 'Tiramisu Tradizionale', price: '₹190', desc: 'Espresso-soaked savoiardi, mascarpone cream' }
+      { name: 'Classic Margherita Pizza', price: '₹340', priceNum: 340, category: 'main', desc: 'San Marzano tomatoes, fresh mozzarella, basil' },
+      { name: 'Handmade Fettuccine Alfredo', price: '₹310', priceNum: 310, category: 'main', desc: 'Creamy parmesan emulsion with cracked black pepper' },
+      { name: 'Herbed Garlic Bread', price: '₹140', priceNum: 140, category: 'starter', desc: 'Toasted sourdough with roasted garlic butter' },
+      { name: 'Tiramisu Tradizionale', price: '₹190', priceNum: 190, category: 'dessert', desc: 'Espresso-soaked savoiardi, mascarpone cream' },
+      { name: 'Signature Aperol Spritz', price: '₹320', priceNum: 320, category: 'drink', desc: 'Prosecco, bitter aperitivo, splash of soda, fresh orange' },
+      { name: 'Chianti Classico Red Wine (Glass)', price: '₹350', priceNum: 350, category: 'drink', desc: 'Tuscan dry red with ripe cherry & oak notes' },
+      { name: 'Italian Blood Orange Soda', price: '₹160', priceNum: 160, category: 'drink', desc: 'Sparkling citrus refresher with fresh rosemary' }
     ]
   },
   {
@@ -54,17 +68,23 @@ export const ALL_RESTAURANTS = [
     cuisineType: 'Café',
     description: 'Slow mornings, good coffee, and something lovely on your plate.',
     offer: 'Up to ₹75 off',
+    offerAmount: 75,
     price: '₹₹',
     budgetCategory: 'budget',
     distance: '0.8 km away',
     distanceKm: 0.8,
     image: goldenHourImg,
     isVeg: true,
+    ambiance: 'Sun-drenched botanical greenhouse, relaxed acoustic tunes, laptop-friendly coffee vibe.',
+    ambianceTags: ['Cozy Work & Quiet Chill', 'Casual Friends Hangout', 'Romantic & Candlelit Date'],
+    signatureDish: 'Artisan Avocado Sourdough',
     menu: [
-      { name: 'Artisan Avocado Sourdough', price: '₹240', desc: 'Hass avocado mash, microgreens, soft boiled egg, seeds' },
-      { name: 'Butter Croissant', price: '₹120', desc: 'Flaky golden laminated pastry with French butter' },
-      { name: 'Specialty Rosetta Cappuccino', price: '₹160', desc: 'Double shot espresso with silky steamed whole milk' },
-      { name: 'Granola & Berry Parfait', price: '₹180', desc: 'Greek yogurt, wild blossom honey, toasted almonds' }
+      { name: 'Artisan Avocado Sourdough', price: '₹240', priceNum: 240, category: 'main', desc: 'Hass avocado mash, microgreens, soft boiled egg, seeds' },
+      { name: 'Butter Croissant', price: '₹120', priceNum: 120, category: 'starter', desc: 'Flaky golden laminated pastry with French butter' },
+      { name: 'Specialty Rosetta Cappuccino', price: '₹160', priceNum: 160, category: 'drink', desc: 'Double shot espresso with silky steamed whole milk' },
+      { name: 'Granola & Berry Parfait', price: '₹180', priceNum: 180, category: 'dessert', desc: 'Greek yogurt, wild blossom honey, toasted almonds' },
+      { name: 'Cold Brew Citrus Tonic', price: '₹180', priceNum: 180, category: 'drink', desc: 'Single-origin Ethiopian cold brew with elderflower tonic' },
+      { name: 'Lavender Blossom Lemonade', price: '₹160', priceNum: 160, category: 'drink', desc: 'Fresh squeezed lemon with French lavender honey' }
     ]
   },
   {
@@ -75,16 +95,23 @@ export const ALL_RESTAURANTS = [
     cuisineType: 'Italian',
     description: 'Fresh pasta made daily, served the way it should be.',
     offer: 'Up to ₹80 off',
+    offerAmount: 80,
     price: '₹₹',
     budgetCategory: 'mid',
     distance: '2.4 km away',
     distanceKm: 2.4,
     image: heroBg,
     isVeg: false,
+    ambiance: 'Modern minimalist Italian bistro, open kitchen views, lively conversational buzz.',
+    ambianceTags: ['Romantic & Candlelit Date', 'Lively & Rooftop Buzz', 'Casual Friends Hangout'],
+    signatureDish: 'Tagliatelle al Tartufo',
     menu: [
-      { name: 'Tagliatelle al Tartufo', price: '₹380', desc: 'Fresh pasta ribbons with black truffle cream and parmesan' },
-      { name: 'Rigatoni all’Arrabbiata', price: '₹280', desc: 'Spicy San Marzano tomato sauce, roasted garlic, fresh basil' },
-      { name: 'Crisp Rosemary Focaccia', price: '₹130', desc: 'Olive oil brushed hearth bread with sea salt' }
+      { name: 'Tagliatelle al Tartufo', price: '₹380', priceNum: 380, category: 'main', desc: 'Fresh pasta ribbons with black truffle cream and parmesan' },
+      { name: 'Rigatoni all’Arrabbiata', price: '₹280', priceNum: 280, category: 'main', desc: 'Spicy San Marzano tomato sauce, roasted garlic, fresh basil' },
+      { name: 'Crisp Rosemary Focaccia', price: '₹130', priceNum: 130, category: 'starter', desc: 'Olive oil brushed hearth bread with sea salt' },
+      { name: 'Classic Negroni Cocktail', price: '₹340', priceNum: 340, category: 'drink', desc: 'Gin, sweet vermouth, Campari, orange twist' },
+      { name: 'Pinot Grigio White Wine (Glass)', price: '₹330', priceNum: 330, category: 'drink', desc: 'Crisp northern Italian white with green apple finish' },
+      { name: 'Panna Cotta al Caramello', price: '₹180', priceNum: 180, category: 'dessert', desc: 'Silky cream with salted caramel and sea salt' }
     ]
   },
   {
@@ -95,16 +122,22 @@ export const ALL_RESTAURANTS = [
     cuisineType: 'Café',
     description: 'A leafy neighborhood café for coffee, conversation, and comfort.',
     offer: 'Up to ₹40 off',
+    offerAmount: 40,
     price: '₹₹',
     budgetCategory: 'budget',
     distance: '2.1 km away',
     distanceKm: 2.1,
     image: goldenHourImg,
     isVeg: true,
+    ambiance: 'Leafy sunlit patio, lush houseplants, peaceful reading & work nooks.',
+    ambianceTags: ['Cozy Work & Quiet Chill', 'Casual Friends Hangout'],
+    signatureDish: 'Wild Mushroom Tartine',
     menu: [
-      { name: 'Wild Mushroom Tartine', price: '₹260', desc: 'Sautéed forest mushrooms, thyme cream on sourdough' },
-      { name: 'Spanish Latte with Oat Milk', price: '₹170', desc: 'Espresso with textured condensed milk' },
-      { name: 'Matcha Ricotta Hotcakes', price: '₹240', desc: 'Fluffy Japanese style hotcakes with maple syrup' }
+      { name: 'Wild Mushroom Tartine', price: '₹260', priceNum: 260, category: 'main', desc: 'Sautéed forest mushrooms, thyme cream on sourdough' },
+      { name: 'Spanish Latte with Oat Milk', price: '₹170', priceNum: 170, category: 'drink', desc: 'Espresso with textured condensed milk' },
+      { name: 'Matcha Ricotta Hotcakes', price: '₹240', priceNum: 240, category: 'dessert', desc: 'Fluffy Japanese style hotcakes with maple syrup' },
+      { name: 'Avocado Citrus Salad', price: '₹220', priceNum: 220, category: 'starter', desc: 'Tossed greens, pomelo, roasted sunflower seeds' },
+      { name: 'Hibiscus Berry Cooler', price: '₹150', priceNum: 150, category: 'drink', desc: 'Steeped wild hibiscus flowers with mint and lime' }
     ]
   },
   {
@@ -115,16 +148,23 @@ export const ALL_RESTAURANTS = [
     cuisineType: 'Indian',
     description: 'Big-hearted plates made for sharing with your favorite people.',
     offer: 'Up to ₹120 off',
+    offerAmount: 120,
     price: '₹₹',
     budgetCategory: 'mid',
     distance: '3.2 km away',
     distanceKm: 3.2,
     image: saffronTableImg,
     isVeg: false,
+    ambiance: 'Vibrant high-energy dining room, bold brass decor, lively laughter and family feasts.',
+    ambianceTags: ['Warm Family Gathering', 'Lively & Rooftop Buzz', 'Casual Friends Hangout'],
+    signatureDish: 'Railway Mutton Curry',
     menu: [
-      { name: 'Amritsari Paneer Tikka', price: '₹270', desc: 'Carom seed and mustard oil spiced cottage cheese' },
-      { name: 'Railway Mutton Curry', price: '₹390', desc: 'Heritage colonial slow cooked spiced lamb curry' },
-      { name: 'Lachedar Paratha', price: '₹75', desc: 'Crispy layered whole wheat bread with ghee' }
+      { name: 'Amritsari Paneer Tikka', price: '₹270', priceNum: 270, category: 'starter', desc: 'Carom seed and mustard oil spiced cottage cheese' },
+      { name: 'Railway Mutton Curry', price: '₹390', priceNum: 390, category: 'main', desc: 'Heritage colonial slow cooked spiced lamb curry' },
+      { name: 'Lachedar Paratha (2 pcs)', price: '₹80', priceNum: 80, category: 'bread', desc: 'Crispy layered whole wheat bread with ghee' },
+      { name: 'Spiced Kokum Margarita', price: '₹290', priceNum: 290, category: 'drink', desc: 'Tequila, roasted kokum extract, black salt rim' },
+      { name: 'Craft IPA Beer (Pint)', price: '₹260', priceNum: 260, category: 'drink', desc: 'Locally brewed hoppy Indian pale ale' },
+      { name: 'Gulab Jamun Cheesecake', price: '₹190', priceNum: 190, category: 'dessert', desc: 'Baked cardamom cream cheese with rose reduction' }
     ]
   },
   {
@@ -135,16 +175,23 @@ export const ALL_RESTAURANTS = [
     cuisineType: 'Italian',
     description: 'Wood-fired classics and a dining room worth lingering in.',
     offer: 'Up to ₹150 off',
+    offerAmount: 150,
     price: '₹₹₹',
     budgetCategory: 'fine',
     distance: '3.6 km away',
     distanceKm: 3.6,
     image: oliveHouseImg,
     isVeg: false,
+    ambiance: 'Sophisticated dim lighting, exposed brick walls, soft jazz, upscale romantic dining.',
+    ambianceTags: ['Sophisticated Fine Dining', 'Romantic & Candlelit Date'],
+    signatureDish: 'Quattro Formaggi Pizza',
     menu: [
-      { name: 'Quattro Formaggi Pizza', price: '₹460', desc: 'Gorgonzola, fontina, mozzarella, parmesan, rosemary honey' },
-      { name: 'Burrata Pugliese', price: '₹390', desc: 'Whole artisan burrata with heirloom tomato carpaccio' },
-      { name: 'Cannoli Siciliani', price: '₹220', desc: 'Crispy pastry shells stuffed with sweet ricotta cream' }
+      { name: 'Quattro Formaggi Pizza', price: '₹460', priceNum: 460, category: 'main', desc: 'Gorgonzola, fontina, mozzarella, parmesan, rosemary honey' },
+      { name: 'Burrata Pugliese', price: '₹390', priceNum: 390, category: 'starter', desc: 'Whole artisan burrata with heirloom tomato carpaccio' },
+      { name: 'Cannoli Siciliani', price: '₹220', priceNum: 220, category: 'dessert', desc: 'Crispy pastry shells stuffed with sweet ricotta cream' },
+      { name: 'Smoked Bourbon Old Fashioned', price: '₹420', priceNum: 420, category: 'drink', desc: 'Oak-aged bourbon, bitters, torch-smoked rosemary' },
+      { name: 'Barolo Red Reserve (Glass)', price: '₹450', priceNum: 450, category: 'drink', desc: 'Rich Piedmontese red wine with violet and spice aromas' },
+      { name: 'Rosemary Blackberry Mocktail', price: '₹220', priceNum: 220, category: 'drink', desc: 'Muddled wild blackberries, lemon, bubbly tonic' }
     ]
   },
   {
@@ -155,16 +202,23 @@ export const ALL_RESTAURANTS = [
     cuisineType: 'Café',
     description: 'All-day breakfasts, bright interiors, and your usual coffee order.',
     offer: 'Up to ₹60 off',
+    offerAmount: 60,
     price: '₹₹',
     budgetCategory: 'budget',
     distance: '1.5 km away',
     distanceKm: 1.5,
     image: goldenHourImg,
     isVeg: true,
+    ambiance: 'Bright airy Scandinavian aesthetic, cheerful retro tunes, sunny morning brunch.',
+    ambianceTags: ['Cozy Work & Quiet Chill', 'Casual Friends Hangout', 'Warm Family Gathering'],
+    signatureDish: 'Classic Eggs Benedict',
     menu: [
-      { name: 'Classic Eggs Benedict', price: '₹270', desc: 'Poached eggs, hollandaise, toasted brioche' },
-      { name: 'Cinnamon French Toast', price: '₹230', desc: 'Brioche bread soaked in vanilla custard with berry compote' },
-      { name: 'Flat White Single Origin', price: '₹160', desc: 'Velvety microfoam over double espresso' }
+      { name: 'Classic Eggs Benedict', price: '₹270', priceNum: 270, category: 'main', desc: 'Poached eggs, hollandaise, toasted brioche' },
+      { name: 'Cinnamon French Toast', price: '₹230', priceNum: 230, category: 'dessert', desc: 'Brioche bread soaked in vanilla custard with berry compote' },
+      { name: 'Flat White Single Origin', price: '₹160', priceNum: 160, category: 'drink', desc: 'Velvety microfoam over double espresso' },
+      { name: 'Fresh Mimosa Cocktail', price: '₹260', priceNum: 260, category: 'drink', desc: 'Fresh squeezed Valencia orange juice with sparkling wine' },
+      { name: 'Berry Antioxidant Smoothie', price: '₹190', priceNum: 190, category: 'drink', desc: 'Blueberries, strawberries, banana, Greek yogurt' },
+      { name: 'Crisp Truffle Fries', price: '₹180', priceNum: 180, category: 'starter', desc: 'Hand cut potatoes tossed in parmesan and white truffle oil' }
     ]
   },
   {
@@ -175,16 +229,22 @@ export const ALL_RESTAURANTS = [
     cuisineType: 'Indian',
     description: 'Regional recipes with fresh ingredients and a generous spirit.',
     offer: 'Up to ₹90 off',
+    offerAmount: 90,
     price: '₹₹',
     budgetCategory: 'mid',
     distance: '4.1 km away',
     distanceKm: 4.1,
     image: saffronTableImg,
     isVeg: false,
+    ambiance: 'Authentic coastal courtyard, terracotta lamps, lush foliage, serene ethnic warmth.',
+    ambianceTags: ['Warm Family Gathering', 'Romantic & Candlelit Date', 'Casual Friends Hangout'],
+    signatureDish: 'Ghee Roast Paneer',
     menu: [
-      { name: 'Ghee Roast Paneer', price: '₹280', desc: 'Mangalorean byadagi chili and clarified butter sauté' },
-      { name: 'Malabar Parotta with Kurma', price: '₹210', desc: 'Flaky spiral bread with coconut vegetable stew' },
-      { name: 'Elaneer Payasam', price: '₹160', desc: 'Tender coconut pudding with cardamom milk' }
+      { name: 'Ghee Roast Paneer', price: '₹280', priceNum: 280, category: 'starter', desc: 'Mangalorean byadagi chili and clarified butter sauté' },
+      { name: 'Malabar Parotta with Kurma', price: '₹210', priceNum: 210, category: 'main', desc: 'Flaky spiral bread with coconut vegetable stew' },
+      { name: 'Elaneer Payasam', price: '₹160', priceNum: 160, category: 'dessert', desc: 'Tender coconut pudding with cardamom milk' },
+      { name: 'Tender Coconut Toddy Punch (Mocktail)', price: '₹160', priceNum: 160, category: 'drink', desc: 'Chilled tender coconut water, ginger, lemon' },
+      { name: 'Filter Kaapi Traditional', price: '₹90', priceNum: 90, category: 'drink', desc: 'Strong chicory drip coffee in brass dabara' }
     ]
   },
   {
@@ -195,16 +255,22 @@ export const ALL_RESTAURANTS = [
     cuisineType: 'Italian',
     description: 'Warm Tuscan recipes, handmade focaccia, and comforting pastas.',
     offer: 'Up to ₹70 off',
+    offerAmount: 70,
     price: '₹₹',
     budgetCategory: 'mid',
     distance: '2.8 km away',
     distanceKm: 2.8,
     image: heroBg,
     isVeg: false,
+    ambiance: 'Old-world Tuscan cellar ambiance, checkered tablecloths, vintage wine barrels, warm & hearty.',
+    ambianceTags: ['Romantic & Candlelit Date', 'Warm Family Gathering', 'Casual Friends Hangout'],
+    signatureDish: 'Pappardelle al Cinghiale',
     menu: [
-      { name: 'Pappardelle al Cinghiale', price: '₹420', desc: 'Wide hand-cut noodles with slow simmered herb ragù' },
-      { name: 'Wood-Fired Calzone Rustico', price: '₹360', desc: 'Folded pizza stuffed with ricotta, salami, mozzarella' },
-      { name: 'Panna Cotta ai Frutti di Bosco', price: '₹190', desc: 'Chilled cooked cream with wild berry glaze' }
+      { name: 'Pappardelle al Cinghiale', price: '₹420', priceNum: 420, category: 'main', desc: 'Wide hand-cut noodles with slow simmered herb ragù' },
+      { name: 'Wood-Fired Calzone Rustico', price: '₹360', priceNum: 360, category: 'main', desc: 'Folded pizza stuffed with ricotta, salami, mozzarella' },
+      { name: 'Panna Cotta ai Frutti di Bosco', price: '₹190', priceNum: 190, category: 'dessert', desc: 'Chilled cooked cream with wild berry glaze' },
+      { name: 'Sangria Rosso Carafe (Half)', price: '₹360', priceNum: 360, category: 'drink', desc: 'Red wine infused with macerated apples, oranges, cinnamon' },
+      { name: 'Craft Blonde Ale', price: '₹250', priceNum: 250, category: 'drink', desc: 'Smooth crisp artisanal Italian style blonde ale' }
     ]
   }
 ]

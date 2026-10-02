@@ -6,19 +6,6 @@ export default function Navbar({
   setCurrentPage,
   currentUser
 }) {
-  const handleNavClick = (targetHash) => {
-    if (currentPage !== 'home') {
-      setCurrentPage('home')
-      setTimeout(() => {
-        const el = document.querySelector(targetHash)
-        el?.scrollIntoView({ behavior: 'smooth' })
-      }, 100)
-    } else {
-      const el = document.querySelector(targetHash)
-      el?.scrollIntoView({ behavior: 'smooth' })
-    }
-  }
-
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-neutral-200/70">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
@@ -48,8 +35,12 @@ export default function Navbar({
               Discover
             </button>
             <button
-              onClick={() => handleNavClick('#compare')}
-              className="hover:text-[#85312C] transition-colors cursor-pointer bg-transparent border-0 p-0 text-[15px] font-medium text-neutral-700"
+              onClick={() => setCurrentPage('compare')}
+              className={`transition-colors cursor-pointer bg-transparent border-0 p-0 text-[15px] font-medium ${
+                currentPage === 'compare'
+                  ? 'text-[#85312C] font-semibold'
+                  : 'text-neutral-700 hover:text-[#85312C]'
+              }`}
             >
               Compare
             </button>
@@ -124,7 +115,7 @@ export default function Navbar({
           )}
 
           <button
-            onClick={() => handleNavClick('#compare')}
+            onClick={() => setCurrentPage('compare')}
             className="inline-flex items-center gap-2 bg-[#85312C] hover:bg-[#702622] text-white text-[14px] font-medium px-4 py-2 rounded-lg shadow-sm transition-all duration-200 cursor-pointer"
           >
             <span>Compare menus</span>

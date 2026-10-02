@@ -385,10 +385,7 @@ export default function HomePage({
               Pick two places. Choose the dishes you actually want. We'll put the menus, offers and final totals side by side.
             </p>
             <button
-              onClick={() => {
-                const el = document.getElementById('shortlist')
-                el?.scrollIntoView({ behavior: 'smooth' })
-              }}
+              onClick={() => setCurrentPage('compare')}
               className="mt-8 inline-flex items-center gap-2 bg-[#F6EEBE] hover:bg-[#ECE3AD] text-[#3A1412] px-5 py-2.5 rounded-lg text-sm font-semibold shadow-md transition-colors cursor-pointer"
             >
               <span>Compare menus</span>

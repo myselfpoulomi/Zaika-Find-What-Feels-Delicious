@@ -7,6 +7,7 @@ import SignupPage from './pages/SignupPage'
 import ProfilePage from './pages/ProfilePage'
 import DiscoverPage from './pages/DiscoverPage'
 import FavoritesPage from './pages/FavoritesPage'
+import ComparePage from './pages/ComparePage'
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState(() => {
@@ -16,6 +17,7 @@ export default function App() {
     if (hash === '#/profile') return 'profile'
     if (hash === '#/discover') return 'discover'
     if (hash === '#/favorites') return 'favorites'
+    if (hash === '#/compare') return 'compare'
     return 'home'
   })
 
@@ -78,6 +80,8 @@ export default function App() {
         setCurrentPage('discover')
       } else if (hash === '#/favorites') {
         setCurrentPage('favorites')
+      } else if (hash === '#/compare') {
+        setCurrentPage('compare')
       } else if (hash === '#/' || hash === '' || hash.startsWith('#')) {
         if (hash === '#/home' || hash === '#/' || hash === '') {
           setCurrentPage('home')
@@ -101,6 +105,8 @@ export default function App() {
       window.location.hash = '#/discover'
     } else if (page === 'favorites') {
       window.location.hash = '#/favorites'
+    } else if (page === 'compare') {
+      window.location.hash = '#/compare'
     } else {
       window.location.hash = '#/'
     }
@@ -240,6 +246,16 @@ export default function App() {
           onToggleFavorite={handleToggleFavorite}
           selectedForCompare={selectedForCompare}
           onToggleCompare={handleToggleCompare}
+        />
+      )}
+
+      {currentPage === 'compare' && (
+        <ComparePage
+          setCurrentPage={navigateTo}
+          selectedForCompare={selectedForCompare}
+          onToggleCompare={handleToggleCompare}
+          favorites={favorites}
+          onToggleFavorite={handleToggleFavorite}
         />
       )}
 

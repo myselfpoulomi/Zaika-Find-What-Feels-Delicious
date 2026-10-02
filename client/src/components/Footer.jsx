@@ -40,7 +40,7 @@ export default function Footer({ setCurrentPage }) {
             Discover
           </button>
           <button
-            onClick={() => handleNavClick('#compare')}
+            onClick={() => setCurrentPage('compare')}
             className="hover:text-[#85312C] transition-colors bg-transparent border-0 p-0 text-xs md:text-sm text-neutral-700 font-medium cursor-pointer"
           >
             Compare
