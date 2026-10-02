@@ -14,8 +14,8 @@ export default function FavoritesPage({
   const savedRestaurants = ALL_RESTAURANTS.filter((r) => favorites[r.id])
 
   return (
-    <main className="flex-1 w-full bg-[#FAF8F5] py-12 px-6 sm:px-10 lg:px-16 min-h-[calc(100vh-160px)]">
-      <div className="max-w-6xl mx-auto">
+    <main className="flex-1 w-full bg-[#FAF8F5] py-12 min-h-[calc(100vh-160px)]">
+      <div className="max-w-7xl mx-auto px-6">
         {/* Header Section */}
         <div className="mb-6">
           <span className="text-[11px] font-bold tracking-[0.2em] text-[#85312C] uppercase block mb-1">

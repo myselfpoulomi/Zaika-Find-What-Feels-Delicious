@@ -202,8 +202,8 @@ export default function HomePage({
       </section>
 
       {/* 2. VALUE PROPOSITION BANNER (Pale Ivory/Cream Strip) */}
-      <section className="bg-[#FAF4DC] border-y border-[#EDE3C4]/70 py-4 px-6">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-x-10 md:gap-x-16 gap-y-3 text-[14px] text-neutral-800">
+      <section className="w-full bg-[#FAF4DC] border-y border-[#EDE3C4]/70 py-4">
+        <div className="max-w-7xl mx-auto px-6 flex flex-wrap items-center justify-center gap-x-10 md:gap-x-16 gap-y-3 text-[14px] text-neutral-800">
           <div className="flex items-center gap-2">
             <svg className="w-4 h-4 text-[#85312C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <circle cx="11" cy="11" r="7" strokeWidth="2" />
@@ -372,8 +372,8 @@ export default function HomePage({
       </section>
 
       {/* 4. THE ZAIKA WAY (Burgundy Comparison Section) */}
-      <section id="compare" className="bg-[#85312C] text-white py-16 px-6">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <section id="compare" className="w-full bg-[#85312C] text-white py-16">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <span className="text-[11px] font-bold tracking-[0.2em] text-[#F8C8BF] uppercase block">
               THE ZAIKA WAY

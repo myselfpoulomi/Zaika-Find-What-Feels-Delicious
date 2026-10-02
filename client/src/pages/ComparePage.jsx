@@ -288,8 +288,8 @@ export default function ComparePage({
   return (
     <div className="flex-1 w-full bg-[#FAF8F5]">
       {/* 1. TOP BANNER HEADER (Matches user reference screenshot) */}
-      <section className="bg-[#FAF5EA] border-b border-[#F0E6D2] pt-10 pb-8 px-6 sm:px-10 lg:px-16">
-        <div className="max-w-6xl mx-auto">
+      <section className="w-full bg-[#FAF5EA] border-b border-[#F0E6D2] pt-10 pb-8">
+        <div className="max-w-7xl mx-auto px-6">
           {/* Subtitle kicker */}
           <span className="text-[11px] font-bold tracking-[0.2em] text-[#85312C] uppercase block mb-1.5">
             THE SMARTER WAY TO EAT OUT
@@ -402,7 +402,8 @@ export default function ComparePage({
       </section>
 
       {/* 2. BODY CONTENT */}
-      <main className="max-w-6xl mx-auto py-10 px-6 sm:px-10 lg:px-16 min-h-[500px]">
+      <main className="w-full py-10 min-h-[500px]">
+        <div className="max-w-7xl mx-auto px-6">
         {/* ============================================================ */}
         {/* STEP 1: YOUR PLANS (Matches user screenshot 1 & 2 + AI Inputs) */}
         {/* ============================================================ */}
@@ -1193,6 +1194,7 @@ export default function ComparePage({
             </div>
           </div>
         )}
+        </div>
       </main>
 
       {/* FULL MENU MODAL */}

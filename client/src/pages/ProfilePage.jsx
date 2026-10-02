@@ -29,8 +29,8 @@ export default function ProfilePage({
     : 'food lover'
 
   return (
-    <main className="flex-1 w-full bg-[#FAF8F5] py-12 px-6 sm:px-10 lg:px-16">
-      <div className="max-w-5xl mx-auto">
+    <main className="flex-1 w-full bg-[#FAF8F5] py-12">
+      <div className="max-w-7xl mx-auto px-6">
         {/* Top Eyebrow & Title */}
         <div className="mb-6">
           <span className="text-[11px] font-bold tracking-[0.2em] text-[#85312C] uppercase block mb-1">

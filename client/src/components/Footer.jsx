@@ -11,8 +11,8 @@ export default function Footer({ setCurrentPage }) {
   }
 
   return (
-    <footer className="bg-[#FAF5EA] border-t border-[#EFE8D6] py-12 px-6 mt-auto">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+    <footer className="w-full bg-[#FAF5EA] border-t border-[#EFE8D6] py-12 mt-auto">
+      <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         {/* Left: Logo and Tagline */}
         <div>
           <button

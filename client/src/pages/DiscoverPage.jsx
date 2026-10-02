@@ -344,8 +344,8 @@ export default function DiscoverPage({
   }
 
   return (
-    <main className="flex-1 w-full bg-[#FAF8F5] py-10 sm:py-14 px-6 sm:px-10 lg:px-16">
-      <div className="max-w-7xl mx-auto">
+    <main className="flex-1 w-full bg-[#FAF8F5] py-10 sm:py-14">
+      <div className="max-w-7xl mx-auto px-6">
         {/* 1. Header Section */}
         <div className="mb-6">
           <span className="text-[11px] font-bold tracking-[0.2em] text-[#85312C] uppercase block mb-1">
