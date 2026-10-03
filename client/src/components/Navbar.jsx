@@ -150,9 +150,9 @@ export default function Navbar({
 
         {/* Right Section: Profile Icon Button, Hamburger Button (Mobile), Desktop Login & Compare */}
         <div className="flex items-center gap-2.5 sm:gap-4 md:gap-6">
-          {/* User Icon Button: Navigates directly to Profile Page Route */}
+          {/* User Icon Button: Navigates directly to Profile Page if logged in, or Login Page if logged out */}
           <button
-            onClick={() => handleNavigate('profile')}
+            onClick={() => handleNavigate(currentUser ? 'profile' : 'login')}
             className={`p-1.5 rounded-full transition-all cursor-pointer flex items-center justify-center ${
               currentPage === 'profile'
                 ? 'text-[#85312C] bg-[#FAF1E8] ring-2 ring-[#85312C]/30'
@@ -160,8 +160,8 @@ export default function Navbar({
                 ? 'text-neutral-800 hover:text-[#85312C] hover:bg-[#FAF1E8]'
                 : 'text-neutral-700 hover:text-[#85312C]'
             }`}
-            title={currentUser ? `${currentUser.name} - Profile & Settings` : 'My Profile & Account'}
-            aria-label="My Profile & Account"
+            title={currentUser ? `${currentUser.name} - Profile & Settings` : 'Log in to your account'}
+            aria-label={currentUser ? 'My Profile & Account' : 'Log in to your account'}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />

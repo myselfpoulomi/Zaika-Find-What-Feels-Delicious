@@ -10,17 +10,6 @@ import FavoritesPage from './pages/FavoritesPage'
 import ComparePage from './pages/ComparePage'
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState(() => {
-    const hash = window.location.hash
-    if (hash === '#/login') return 'login'
-    if (hash === '#/signup') return 'signup'
-    if (hash === '#/profile') return 'profile'
-    if (hash === '#/discover') return 'discover'
-    if (hash === '#/favorites') return 'favorites'
-    if (hash === '#/compare') return 'compare'
-    return 'home'
-  })
-
   const [currentUser, setCurrentUser] = useState(() => {
     try {
       const saved = localStorage.getItem('zaika_user')
@@ -28,6 +17,24 @@ export default function App() {
     } catch {
       return null
     }
+  })
+
+  const [currentPage, setCurrentPage] = useState(() => {
+    const hash = window.location.hash
+    if (hash === '#/login') return 'login'
+    if (hash === '#/signup') return 'signup'
+    if (hash === '#/profile') {
+      try {
+        const saved = localStorage.getItem('zaika_user')
+        return saved ? 'profile' : 'login'
+      } catch {
+        return 'login'
+      }
+    }
+    if (hash === '#/discover') return 'discover'
+    if (hash === '#/favorites') return 'favorites'
+    if (hash === '#/compare') return 'compare'
+    return 'home'
   })
 
   const [favorites, setFavorites] = useState(() => {
@@ -75,7 +82,13 @@ export default function App() {
       } else if (hash === '#/signup') {
         setCurrentPage('signup')
       } else if (hash === '#/profile') {
-        setCurrentPage('profile')
+        const saved = localStorage.getItem('zaika_user')
+        if (!saved && !currentUser) {
+          setCurrentPage('login')
+          window.location.hash = '#/login'
+        } else {
+          setCurrentPage('profile')
+        }
       } else if (hash === '#/discover') {
         setCurrentPage('discover')
       } else if (hash === '#/favorites') {
@@ -91,21 +104,25 @@ export default function App() {
 
     window.addEventListener('hashchange', handleHashChange)
     return () => window.removeEventListener('hashchange', handleHashChange)
-  }, [])
+  }, [currentUser])
 
   const navigateTo = (page) => {
-    setCurrentPage(page)
-    if (page === 'login') {
+    let targetPage = page
+    if (page === 'profile' && !currentUser) {
+      targetPage = 'login'
+    }
+    setCurrentPage(targetPage)
+    if (targetPage === 'login') {
       window.location.hash = '#/login'
-    } else if (page === 'signup') {
+    } else if (targetPage === 'signup') {
       window.location.hash = '#/signup'
-    } else if (page === 'profile') {
+    } else if (targetPage === 'profile') {
       window.location.hash = '#/profile'
-    } else if (page === 'discover') {
+    } else if (targetPage === 'discover') {
       window.location.hash = '#/discover'
-    } else if (page === 'favorites') {
+    } else if (targetPage === 'favorites') {
       window.location.hash = '#/favorites'
-    } else if (page === 'compare') {
+    } else if (targetPage === 'compare') {
       window.location.hash = '#/compare'
     } else {
       window.location.hash = '#/'
@@ -274,15 +291,22 @@ export default function App() {
       )}
 
       {currentPage === 'profile' && (
-        <ProfilePage
-          currentUser={currentUser}
-          onLogout={handleLogout}
-          setCurrentPage={navigateTo}
-          recentSearches={recentSearches}
-          onSelectSearch={handleSelectSearch}
-          onClearSearches={handleClearSearches}
-          onUpdateProfile={handleUpdateProfile}
-        />
+        currentUser ? (
+          <ProfilePage
+            currentUser={currentUser}
+            onLogout={handleLogout}
+            setCurrentPage={navigateTo}
+            recentSearches={recentSearches}
+            onSelectSearch={handleSelectSearch}
+            onClearSearches={handleClearSearches}
+            onUpdateProfile={handleUpdateProfile}
+          />
+        ) : (
+          <LoginPage
+            setCurrentPage={navigateTo}
+            onLoginSuccess={handleLoginSuccess}
+          />
+        )
       )}
 
       {/* Shared Footer for all pages */}

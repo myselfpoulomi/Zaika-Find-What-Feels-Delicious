@@ -23,6 +23,54 @@ export default function ProfilePage({
     }
   })
 
+  // If user is not logged in, prompt to log in instead of showing private profile & logout button
+  if (!currentUser) {
+    return (
+      <main className="flex-1 w-full bg-[#FAF8F5] py-16 sm:py-24 min-h-[calc(100vh-160px)] flex items-center justify-center">
+        <div className="max-w-md w-full mx-auto px-6 text-center">
+          <div className="w-16 h-16 rounded-full bg-[#FAF1E8] border border-[#85312C]/20 text-[#85312C] mx-auto flex items-center justify-center mb-5 shadow-xs">
+            <svg
+              className="w-8 h-8"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.8"
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              />
+            </svg>
+          </div>
+          <span className="text-[11px] font-bold tracking-[0.2em] text-[#85312C] uppercase block mb-1">
+            YOUR CORNER
+          </span>
+          <h1 className="font-serif text-3xl sm:text-4xl text-neutral-900 font-normal mb-3">
+            Please log in
+          </h1>
+          <p className="text-neutral-600 text-sm mb-8 leading-relaxed">
+            You are currently logged out. Sign in or create an account to view and manage your dining preferences and saved spots.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button
+              onClick={() => setCurrentPage('login')}
+              className="w-full sm:w-auto bg-[#85312C] hover:bg-[#702622] text-white text-sm font-medium px-6 py-2.5 rounded-xl shadow-sm transition-all cursor-pointer"
+            >
+              Log in
+            </button>
+            <button
+              onClick={() => setCurrentPage('signup')}
+              className="w-full sm:w-auto bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-300 text-sm font-medium px-6 py-2.5 rounded-xl shadow-sm transition-all cursor-pointer"
+            >
+              Create account
+            </button>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
   // Display name
   const displayName = currentUser?.name
     ? currentUser.name.split(' ')[0]
