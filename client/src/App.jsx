@@ -110,7 +110,7 @@ export default function App() {
     let targetPage = page
     if (page === 'profile' && !currentUser) {
       targetPage = 'login'
-    }
+    } 
     setCurrentPage(targetPage)
     if (targetPage === 'login') {
       window.location.hash = '#/login'
