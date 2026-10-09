@@ -10,6 +10,15 @@ import FavoritesPage from './pages/FavoritesPage'
 import ComparePage from './pages/ComparePage'
 import { getCurrentUser, logoutUser } from './services/auth'
 
+const PROTECTED_PAGES = ['discover', 'compare', 'favorites', 'profile']
+
+const PROTECTED_MESSAGES = {
+  discover: 'Please log in to discover and explore curated restaurants and unique dishes.',
+  compare: 'Please log in to compare restaurant menus, pricing, and ratings side-by-side.',
+  favorites: 'Please log in to view and manage your saved favorite spots.',
+  profile: 'Please log in to access your dining profile and preferences.',
+}
+
 export default function App() {
   const [currentUser, setCurrentUser] = useState(() => {
     try {
@@ -20,21 +29,30 @@ export default function App() {
     }
   })
 
+  const [redirectAfterLogin, setRedirectAfterLogin] = useState(null)
+  const [authNotice, setAuthNotice] = useState('')
+
   const [currentPage, setCurrentPage] = useState(() => {
     const hash = window.location.hash
-    if (hash === '#/login') return 'login'
-    if (hash === '#/signup') return 'signup'
-    if (hash === '#/profile') {
+    const pageFromHash = hash.replace(/^#\/?/, '')
+    const savedUser = (() => {
       try {
         const saved = localStorage.getItem('zaika_user')
-        return saved ? 'profile' : 'login'
+        return saved ? JSON.parse(saved) : null
       } catch {
+        return null
+      }
+    })()
+
+    if (PROTECTED_PAGES.includes(pageFromHash)) {
+      if (!savedUser) {
         return 'login'
       }
+      return pageFromHash
     }
-    if (hash === '#/discover') return 'discover'
-    if (hash === '#/favorites') return 'favorites'
-    if (hash === '#/compare') return 'compare'
+
+    if (pageFromHash === 'login') return 'login'
+    if (pageFromHash === 'signup') return 'signup'
     return 'home'
   })
 
@@ -74,33 +92,30 @@ export default function App() {
 
   const [searchQuery, setSearchQuery] = useState('')
 
-  // Synchronize hash with page state
+  // Synchronize hash with page state and enforce protection for restricted pages
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash
-      if (hash === '#/login') {
+      const pageFromHash = hash.replace(/^#\/?/, '')
+
+      let target = 'home'
+      if (pageFromHash === 'login') target = 'login'
+      else if (pageFromHash === 'signup') target = 'signup'
+      else if (pageFromHash === 'profile') target = 'profile'
+      else if (pageFromHash === 'discover') target = 'discover'
+      else if (pageFromHash === 'favorites') target = 'favorites'
+      else if (pageFromHash === 'compare') target = 'compare'
+      else if (hash === '#/' || hash === '' || hash.startsWith('#')) target = 'home'
+
+      if (PROTECTED_PAGES.includes(target) && !currentUser) {
+        setRedirectAfterLogin(target)
+        setAuthNotice(PROTECTED_MESSAGES[target] || 'Please log in to access this page.')
         setCurrentPage('login')
-      } else if (hash === '#/signup') {
-        setCurrentPage('signup')
-      } else if (hash === '#/profile') {
-        const saved = localStorage.getItem('zaika_user')
-        if (!saved && !currentUser) {
-          setCurrentPage('login')
-          window.location.hash = '#/login'
-        } else {
-          setCurrentPage('profile')
-        }
-      } else if (hash === '#/discover') {
-        setCurrentPage('discover')
-      } else if (hash === '#/favorites') {
-        setCurrentPage('favorites')
-      } else if (hash === '#/compare') {
-        setCurrentPage('compare')
-      } else if (hash === '#/' || hash === '' || hash.startsWith('#')) {
-        if (hash === '#/home' || hash === '#/' || hash === '') {
-          setCurrentPage('home')
-        }
+        window.location.hash = '#/login'
+        return
       }
+
+      setCurrentPage(target)
     }
 
     window.addEventListener('hashchange', handleHashChange)
@@ -109,9 +124,16 @@ export default function App() {
 
   const navigateTo = (page) => {
     let targetPage = page
-    if (page === 'profile' && !currentUser) {
+
+    // Restrict Discover, Compare, Favorites, and Profile to logged-in users only
+    if (PROTECTED_PAGES.includes(page) && !currentUser) {
+      setRedirectAfterLogin(page)
+      setAuthNotice(PROTECTED_MESSAGES[page] || 'Please log in to access this page.')
       targetPage = 'login'
-    } 
+    } else if (page !== 'login') {
+      setAuthNotice('')
+    }
+
     setCurrentPage(targetPage)
     if (targetPage === 'login') {
       window.location.hash = '#/login'
@@ -188,7 +210,10 @@ export default function App() {
     } catch (e) {
       console.error(e)
     }
-    navigateTo('home')
+    const destination = redirectAfterLogin || 'home'
+    setRedirectAfterLogin(null)
+    setAuthNotice('')
+    navigateTo(destination)
   }
 
   const handleSignupSuccess = (user) => {
@@ -233,6 +258,16 @@ export default function App() {
           } catch (e) {
             console.error(e)
           }
+          // If user was on a protected page, redirect to login
+          setCurrentPage((curr) => {
+            if (PROTECTED_PAGES.includes(curr)) {
+              setRedirectAfterLogin(curr)
+              setAuthNotice(PROTECTED_MESSAGES[curr] || 'Please log in to continue.')
+              window.location.hash = '#/login'
+              return 'login'
+            }
+            return curr
+          })
         }
       })
       .catch((err) => {
@@ -282,42 +317,70 @@ export default function App() {
         />
       )}
 
+      {/* Protected: Discover Page */}
       {currentPage === 'discover' && (
-        <DiscoverPage
-          setCurrentPage={navigateTo}
-          initialQuery={searchQuery}
-          onAddRecentSearch={handleAddRecentSearch}
-          favorites={favorites}
-          onToggleFavorite={handleToggleFavorite}
-          selectedForCompare={selectedForCompare}
-          onToggleCompare={handleToggleCompare}
-        />
+        currentUser ? (
+          <DiscoverPage
+            setCurrentPage={navigateTo}
+            initialQuery={searchQuery}
+            onAddRecentSearch={handleAddRecentSearch}
+            favorites={favorites}
+            onToggleFavorite={handleToggleFavorite}
+            selectedForCompare={selectedForCompare}
+            onToggleCompare={handleToggleCompare}
+          />
+        ) : (
+          <LoginPage
+            setCurrentPage={navigateTo}
+            onLoginSuccess={handleLoginSuccess}
+            redirectNotice={PROTECTED_MESSAGES.discover}
+          />
+        )
       )}
 
+      {/* Protected: Favorites Page */}
       {currentPage === 'favorites' && (
-        <FavoritesPage
-          setCurrentPage={navigateTo}
-          favorites={favorites}
-          onToggleFavorite={handleToggleFavorite}
-          selectedForCompare={selectedForCompare}
-          onToggleCompare={handleToggleCompare}
-        />
+        currentUser ? (
+          <FavoritesPage
+            setCurrentPage={navigateTo}
+            favorites={favorites}
+            onToggleFavorite={handleToggleFavorite}
+            selectedForCompare={selectedForCompare}
+            onToggleCompare={handleToggleCompare}
+          />
+        ) : (
+          <LoginPage
+            setCurrentPage={navigateTo}
+            onLoginSuccess={handleLoginSuccess}
+            redirectNotice={PROTECTED_MESSAGES.favorites}
+          />
+        )
       )}
 
+      {/* Protected: Compare Page */}
       {currentPage === 'compare' && (
-        <ComparePage
-          setCurrentPage={navigateTo}
-          selectedForCompare={selectedForCompare}
-          onToggleCompare={handleToggleCompare}
-          favorites={favorites}
-          onToggleFavorite={handleToggleFavorite}
-        />
+        currentUser ? (
+          <ComparePage
+            setCurrentPage={navigateTo}
+            selectedForCompare={selectedForCompare}
+            onToggleCompare={handleToggleCompare}
+            favorites={favorites}
+            onToggleFavorite={handleToggleFavorite}
+          />
+        ) : (
+          <LoginPage
+            setCurrentPage={navigateTo}
+            onLoginSuccess={handleLoginSuccess}
+            redirectNotice={PROTECTED_MESSAGES.compare}
+          />
+        )
       )}
 
       {currentPage === 'login' && (
         <LoginPage
           setCurrentPage={navigateTo}
           onLoginSuccess={handleLoginSuccess}
+          redirectNotice={authNotice}
         />
       )}
 
@@ -328,6 +391,7 @@ export default function App() {
         />
       )}
 
+      {/* Protected: Profile Page */}
       {currentPage === 'profile' && (
         currentUser ? (
           <ProfilePage
@@ -343,6 +407,7 @@ export default function App() {
           <LoginPage
             setCurrentPage={navigateTo}
             onLoginSuccess={handleLoginSuccess}
+            redirectNotice={PROTECTED_MESSAGES.profile}
           />
         )
       )}
