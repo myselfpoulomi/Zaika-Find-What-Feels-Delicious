@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import morgan from "morgan";
+import cookieParser from "cookie-parser";
+import authRoutes from "./routes/auth.routes.js";
 
 // Load environment variables
 dotenv.config();
@@ -9,16 +11,34 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Allowed frontend origins for CORS with credentials
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://127.0.0.1:5173",
+].filter(Boolean);
+
 // Middleware
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
-    credentials: true,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, server-to-server)
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(null, true); // Dev-friendly permissive origin reflection
+    },
+    credentials: true, // Allow cookies across origins
   })
 );
 app.use(morgan("dev"));
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Routes
+app.use("/api/auth", authRoutes);
 
 // Root Route
 app.get("/", (req, res) => {

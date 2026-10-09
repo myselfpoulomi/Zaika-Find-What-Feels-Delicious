@@ -8,6 +8,7 @@ import ProfilePage from './pages/ProfilePage'
 import DiscoverPage from './pages/DiscoverPage'
 import FavoritesPage from './pages/FavoritesPage'
 import ComparePage from './pages/ComparePage'
+import { getCurrentUser, logoutUser } from './services/auth'
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(() => {
@@ -211,7 +212,44 @@ export default function App() {
     })
   }
 
-  const handleLogout = () => {
+  // Automatically verify user session via HTTP-only cookie on mount
+  useEffect(() => {
+    let isMounted = true
+    getCurrentUser()
+      .then((user) => {
+        if (!isMounted) return
+        if (user) {
+          setCurrentUser(user)
+          try {
+            localStorage.setItem('zaika_user', JSON.stringify(user))
+          } catch (e) {
+            console.error(e)
+          }
+        } else {
+          // If server says no session or expired cookie, clear local state
+          setCurrentUser(null)
+          try {
+            localStorage.removeItem('zaika_user')
+          } catch (e) {
+            console.error(e)
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn('Session check skipped:', err)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser()
+    } catch (e) {
+      console.error('Logout error:', e)
+    }
     setCurrentUser(null)
     try {
       localStorage.removeItem('zaika_user')

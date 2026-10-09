@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import zaikaLogo from '../assets/zaika.png'
+import { loginUser } from '../services/auth'
 
 export default function LoginPage({ setCurrentPage, onLoginSuccess }) {
   // Mode: 'login' | 'forgot-email' | 'forgot-otp' | 'forgot-new-password' | 'forgot-done'
@@ -10,6 +11,7 @@ export default function LoginPage({ setCurrentPage, onLoginSuccess }) {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loginError, setLoginError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Forgot password state
   const [resetEmail, setResetEmail] = useState('')
@@ -35,8 +37,8 @@ export default function LoginPage({ setCurrentPage, onLoginSuccess }) {
     return () => clearInterval(interval)
   }, [mode, timer])
 
-  // Handle Standard Login
-  const handleLoginSubmit = (e) => {
+  // Handle Standard Login via HTTP-Only Cookies
+  const handleLoginSubmit = async (e) => {
     e.preventDefault()
     setLoginError('')
     if (!email.trim() || !email.includes('@')) {
@@ -48,14 +50,19 @@ export default function LoginPage({ setCurrentPage, onLoginSuccess }) {
       return
     }
 
-    // Successful login simulation
-    const displayName = email.split('@')[0].replace(/[._]/g, ' ')
-    const formattedName = displayName.charAt(0).toUpperCase() + displayName.slice(1)
-    onLoginSuccess({
-      name: formattedName || 'Foodie',
-      email: email.trim().toLowerCase()
-    })
-    setCurrentPage('home')
+    setIsSubmitting(true)
+    try {
+      const data = await loginUser({
+        email: email.trim().toLowerCase(),
+        password,
+      })
+      onLoginSuccess(data.user)
+      setCurrentPage('home')
+    } catch (err) {
+      setLoginError(err.message || 'Invalid email or password. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   // Forgot Password: Step 1 Send OTP
@@ -250,10 +257,23 @@ export default function LoginPage({ setCurrentPage, onLoginSuccess }) {
 
               <button
                 type="submit"
-                className="w-full bg-[#85312C] hover:bg-[#702622] text-white py-3 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 transition-colors shadow-sm cursor-pointer mt-5"
+                disabled={isSubmitting}
+                className="w-full bg-[#85312C] hover:bg-[#702622] disabled:opacity-70 disabled:cursor-not-allowed text-white py-3 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 transition-colors shadow-sm cursor-pointer mt-5"
               >
-                <span>Log in</span>
-                <span className="text-base leading-none">→</span>
+                {isSubmitting ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                    <span>Logging in...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Log in</span>
+                    <span className="text-base leading-none">→</span>
+                  </>
+                )}
               </button>
             </form>
 

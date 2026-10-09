@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import zaikaLogo from '../assets/zaika.png'
+import { registerUser } from '../services/auth'
 
 export default function SignupPage({ setCurrentPage, onSignupSuccess }) {
   // Step: 1 = Name & Email, 2 = OTP, 3 = Password, 4 = Success
@@ -13,6 +14,7 @@ export default function SignupPage({ setCurrentPage, onSignupSuccess }) {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [timer, setTimer] = useState(45)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const isResendActive = timer === 0
 
   const otpInputs = useRef([])
@@ -107,8 +109,8 @@ export default function SignupPage({ setCurrentPage, onSignupSuccess }) {
     setError('')
   }
 
-  // Step 3: Submit Password
-  const handlePasswordSubmit = (e) => {
+  // Step 3: Submit Password & Register User via HTTP-Only Cookies
+  const handlePasswordSubmit = async (e) => {
     e.preventDefault()
     setError('')
     if (!password || password.length < 6) {
@@ -120,13 +122,20 @@ export default function SignupPage({ setCurrentPage, onSignupSuccess }) {
       return
     }
 
-    // Save signed up user
-    const newUser = {
-      name: name.trim(),
-      email: email.trim().toLowerCase()
+    setIsSubmitting(true)
+    try {
+      const data = await registerUser({
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        password,
+      })
+      onSignupSuccess(data.user)
+      setStep(4)
+    } catch (err) {
+      setError(err.message || 'Failed to create account. Please try again.')
+    } finally {
+      setIsSubmitting(false)
     }
-    onSignupSuccess(newUser)
-    setStep(4)
   }
 
   return (
@@ -383,10 +392,23 @@ export default function SignupPage({ setCurrentPage, onSignupSuccess }) {
 
               <button
                 type="submit"
-                className="w-full bg-[#85312C] hover:bg-[#702622] text-white py-3 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 transition-colors shadow-sm cursor-pointer mt-6"
+                disabled={isSubmitting}
+                className="w-full bg-[#85312C] hover:bg-[#702622] disabled:opacity-70 disabled:cursor-not-allowed text-white py-3 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 transition-colors shadow-sm cursor-pointer mt-6"
               >
-                <span>Create account</span>
-                <span className="text-base leading-none">→</span>
+                {isSubmitting ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                    <span>Creating account...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Create account</span>
+                    <span className="text-base leading-none">→</span>
+                  </>
+                )}
               </button>
             </form>
           </div>
