@@ -117,54 +117,33 @@ export default function Navbar({
           <nav className="hidden md:flex items-center gap-8 text-[15px] font-medium text-neutral-700">
             <button
               onClick={() => handleNavigate('discover')}
-              className={`transition-colors cursor-pointer bg-transparent border-0 p-0 text-[15px] font-medium inline-flex items-center gap-1.5 ${
+              className={`transition-colors cursor-pointer bg-transparent border-0 p-0 text-[15px] font-medium ${
                 currentPage === 'discover'
                   ? 'text-[#85312C] font-semibold'
                   : 'text-neutral-700 hover:text-[#85312C]'
               }`}
             >
-              <span>Discover</span>
-              {!currentUser && (
-                <span className="text-[10px] text-neutral-400 bg-neutral-100 px-1.5 py-0.5 rounded-full flex items-center" title="Login required">
-                  <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                </span>
-              )}
+              Discover
             </button>
             <button
               onClick={() => handleNavigate('compare')}
-              className={`transition-colors cursor-pointer bg-transparent border-0 p-0 text-[15px] font-medium inline-flex items-center gap-1.5 ${
+              className={`transition-colors cursor-pointer bg-transparent border-0 p-0 text-[15px] font-medium ${
                 currentPage === 'compare'
                   ? 'text-[#85312C] font-semibold'
                   : 'text-neutral-700 hover:text-[#85312C]'
               }`}
             >
-              <span>Compare</span>
-              {!currentUser && (
-                <span className="text-[10px] text-neutral-400 bg-neutral-100 px-1.5 py-0.5 rounded-full flex items-center" title="Login required">
-                  <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                </span>
-              )}
+              Compare
             </button>
             <button
               onClick={() => handleNavigate('favorites')}
-              className={`transition-colors cursor-pointer bg-transparent border-0 p-0 text-[15px] font-medium inline-flex items-center gap-1.5 ${
+              className={`transition-colors cursor-pointer bg-transparent border-0 p-0 text-[15px] font-medium ${
                 currentPage === 'favorites'
                   ? 'text-[#85312C] font-semibold'
                   : 'text-neutral-700 hover:text-[#85312C]'
               }`}
             >
-              <span>Favorites</span>
-              {!currentUser && (
-                <span className="text-[10px] text-neutral-400 bg-neutral-100 px-1.5 py-0.5 rounded-full flex items-center" title="Login required">
-                  <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                </span>
-              )}
+              Favorites
             </button>
           </nav>
         </div>
@@ -285,19 +264,9 @@ export default function Navbar({
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {!currentUser && (
-                      <span className="text-[11px] text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded-full flex items-center gap-1 font-normal">
-                        <svg className="w-2.5 h-2.5 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                        </svg>
-                        <span>Login</span>
-                      </span>
-                    )}
-                    {isActive && (
-                      <span className="w-2 h-2 rounded-full bg-[#85312C]" />
-                    )}
-                  </div>
+                  {isActive && (
+                    <span className="w-2 h-2 rounded-full bg-[#85312C]" />
+                  )}
                 </button>
               )
             })}
