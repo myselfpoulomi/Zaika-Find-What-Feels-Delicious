@@ -11,17 +11,28 @@ datasource db {
 }
 
 model User {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  passwordHash String
+  name         String
+  phone        String?
+  bio          String?
+  preference   Preference?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@map("users")
+}
+
+model Preference {
   id              String   @id @default(cuid())
-  email           String   @unique
-  passwordHash    String
-  name            String
-  phone           String?
-  bio             String?
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   favoriteCuisine String?  @default("Italian")
   typicalBudget   String?  @default("1500")
   dietaryPref     String?  @default("Vegetarian")
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  @@map("users")
+  @@map("preferences")
 }

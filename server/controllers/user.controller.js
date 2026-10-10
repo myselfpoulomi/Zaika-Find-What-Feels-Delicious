@@ -2,22 +2,45 @@ import bcrypt from 'bcryptjs';
 import prisma from '../db/prisma.js';
 import { generateToken, setAuthCookie, clearAuthCookie } from '../utils/token.js';
 
-// Standard safe fields to return for user profile
+// Standard safe fields to return for user profile including connected preference
 export const SAFE_USER_SELECT = {
   id: true,
   name: true,
   email: true,
   phone: true,
   bio: true,
-  favoriteCuisine: true,
-  typicalBudget: true,
-  dietaryPref: true,
   createdAt: true,
   updatedAt: true,
+  preference: {
+    select: {
+      id: true,
+      userId: true,
+      favoriteCuisine: true,
+      typicalBudget: true,
+      dietaryPref: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  },
 };
 
 /**
- * CREATE a user / profile
+ * Format user object to have convenient top-level preference properties
+ * while preserving the nested `preference` relation object
+ */
+export const formatUserWithPreference = (user) => {
+  if (!user) return null;
+  const pref = user.preference || {};
+  return {
+    ...user,
+    favoriteCuisine: pref.favoriteCuisine || 'Italian',
+    typicalBudget: pref.typicalBudget || '1500',
+    dietaryPref: pref.dietaryPref || 'Vegetarian',
+  };
+};
+
+/**
+ * CREATE a user and connected preference
  * POST /api/users
  */
 export const createUser = async (req, res) => {
@@ -71,6 +94,7 @@ export const createUser = async (req, res) => {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
+    // Create user and connected preference in PostgreSQL
     const newUser = await prisma.user.create({
       data: {
         name: name.trim(),
@@ -78,21 +102,27 @@ export const createUser = async (req, res) => {
         passwordHash,
         phone: phone ? phone.trim() : null,
         bio: bio ? bio.trim() : null,
-        favoriteCuisine: favoriteCuisine || 'Italian',
-        typicalBudget: typicalBudget ? String(typicalBudget) : '1500',
-        dietaryPref: dietaryPref || 'Vegetarian',
+        preference: {
+          create: {
+            favoriteCuisine: favoriteCuisine || 'Italian',
+            typicalBudget: typicalBudget ? String(typicalBudget) : '1500',
+            dietaryPref: dietaryPref || 'Vegetarian',
+          },
+        },
       },
       select: SAFE_USER_SELECT,
     });
 
-    // Optionally set session cookie if requested or newly registered
+    const formatted = formatUserWithPreference(newUser);
+
+    // Set HTTP-only auth cookie
     const token = generateToken(newUser.id);
     setAuthCookie(res, token);
 
     return res.status(201).json({
       success: true,
-      message: 'User profile created successfully!',
-      user: newUser,
+      message: 'User and preferences created successfully!',
+      user: formatted,
     });
   } catch (error) {
     console.error('Create User Error:', error);
@@ -104,7 +134,7 @@ export const createUser = async (req, res) => {
 };
 
 /**
- * READ currently authenticated user's profile
+ * READ currently authenticated user's profile with connected preference
  * GET /api/users/profile or GET /api/user/profile
  */
 export const getMyProfile = async (req, res) => {
@@ -123,7 +153,7 @@ export const getMyProfile = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      user,
+      user: formatUserWithPreference(user),
     });
   } catch (error) {
     console.error('Get Profile Error:', error);
@@ -156,7 +186,7 @@ export const getUserById = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      user,
+      user: formatUserWithPreference(user),
     });
   } catch (error) {
     console.error('Get User By ID Error:', error);
@@ -181,7 +211,7 @@ export const getAllUsers = async (req, res) => {
     return res.status(200).json({
       success: true,
       count: users.length,
-      users,
+      users: users.map(formatUserWithPreference),
     });
   } catch (error) {
     console.error('Get All Users Error:', error);
@@ -193,7 +223,7 @@ export const getAllUsers = async (req, res) => {
 };
 
 /**
- * UPDATE authenticated user's profile
+ * UPDATE authenticated user's profile and connected preference
  * PUT /api/users/profile or PUT /api/user/profile
  */
 export const updateMyProfile = async (req, res) => {
@@ -209,30 +239,18 @@ export const updateMyProfile = async (req, res) => {
       newPassword,
     } = req.body;
 
-    const updateData = {};
+    const userUpdateData = {};
 
     if (name !== undefined && name.trim()) {
-      updateData.name = name.trim();
+      userUpdateData.name = name.trim();
     }
 
     if (phone !== undefined) {
-      updateData.phone = phone ? phone.trim() : null;
+      userUpdateData.phone = phone ? phone.trim() : null;
     }
 
     if (bio !== undefined) {
-      updateData.bio = bio ? bio.trim() : null;
-    }
-
-    if (favoriteCuisine !== undefined) {
-      updateData.favoriteCuisine = favoriteCuisine;
-    }
-
-    if (typicalBudget !== undefined) {
-      updateData.typicalBudget = String(typicalBudget);
-    }
-
-    if (dietaryPref !== undefined) {
-      updateData.dietaryPref = dietaryPref;
+      userUpdateData.bio = bio ? bio.trim() : null;
     }
 
     // Handle password update if requested
@@ -263,26 +281,50 @@ export const updateMyProfile = async (req, res) => {
         });
       }
 
-      updateData.passwordHash = await bcrypt.hash(newPassword, 10);
+      userUpdateData.passwordHash = await bcrypt.hash(newPassword, 10);
     }
 
-    if (Object.keys(updateData).length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'No fields provided to update.',
+    // Update user table if user fields changed
+    if (Object.keys(userUpdateData).length > 0) {
+      await prisma.user.update({
+        where: { id: req.user.id },
+        data: userUpdateData,
       });
     }
 
-    const updatedUser = await prisma.user.update({
+    // Update or create connected preference record using userId foreign key
+    const hasPrefUpdate =
+      favoriteCuisine !== undefined ||
+      typicalBudget !== undefined ||
+      dietaryPref !== undefined;
+
+    if (hasPrefUpdate) {
+      await prisma.preference.upsert({
+        where: { userId: req.user.id },
+        create: {
+          userId: req.user.id,
+          favoriteCuisine: favoriteCuisine || 'Italian',
+          typicalBudget: typicalBudget ? String(typicalBudget) : '1500',
+          dietaryPref: dietaryPref || 'Vegetarian',
+        },
+        update: {
+          ...(favoriteCuisine !== undefined && { favoriteCuisine }),
+          ...(typicalBudget !== undefined && { typicalBudget: String(typicalBudget) }),
+          ...(dietaryPref !== undefined && { dietaryPref }),
+        },
+      });
+    }
+
+    // Return the updated user along with preference relation
+    const updatedUser = await prisma.user.findUnique({
       where: { id: req.user.id },
-      data: updateData,
       select: SAFE_USER_SELECT,
     });
 
     return res.status(200).json({
       success: true,
-      message: 'Profile updated successfully!',
-      user: updatedUser,
+      message: 'Profile and preferences updated successfully!',
+      user: formatUserWithPreference(updatedUser),
     });
   } catch (error) {
     console.error('Update Profile Error:', error);
@@ -301,7 +343,6 @@ export const updateUserById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Users can only update their own profile unless privileged
     if (req.user.id !== id) {
       return res.status(403).json({
         success: false,
@@ -321,13 +362,14 @@ export const updateUserById = async (req, res) => {
 
 /**
  * DELETE authenticated user's profile and account
+ * Cascades deletion of connected preference in PostgreSQL!
  * DELETE /api/users/profile or DELETE /api/user/profile
  */
 export const deleteMyProfile = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Delete user from database
+    // Delete user from database (Preference is automatically cascade-deleted)
     await prisma.user.delete({
       where: { id: userId },
     });
@@ -337,7 +379,7 @@ export const deleteMyProfile = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Account and profile deleted successfully.',
+      message: 'Account, profile, and preferences deleted successfully.',
     });
   } catch (error) {
     console.error('Delete Profile Error:', error);
@@ -356,7 +398,6 @@ export const deleteUserById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Users can only delete their own profile unless privileged
     if (req.user.id !== id) {
       return res.status(403).json({
         success: false,
@@ -370,6 +411,105 @@ export const deleteUserById = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Server error while deleting user.',
+    });
+  }
+};
+
+// =============================================================
+// DEDICATED PREFERENCE CRUD CONTROLLERS
+// =============================================================
+
+/**
+ * READ user's preference
+ * GET /api/user/preference or GET /api/preferences
+ */
+export const getUserPreference = async (req, res) => {
+  try {
+    let preference = await prisma.preference.findUnique({
+      where: { userId: req.user.id },
+    });
+
+    // If preference hasn't been created yet, initialize default
+    if (!preference) {
+      preference = await prisma.preference.create({
+        data: {
+          userId: req.user.id,
+          favoriteCuisine: 'Italian',
+          typicalBudget: '1500',
+          dietaryPref: 'Vegetarian',
+        },
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      preference,
+    });
+  } catch (error) {
+    console.error('Get Preference Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error fetching preferences.',
+    });
+  }
+};
+
+/**
+ * CREATE or UPDATE user's preference using userId as foreign key
+ * PUT /api/user/preference or PUT /api/preferences
+ */
+export const updateUserPreference = async (req, res) => {
+  try {
+    const { favoriteCuisine, typicalBudget, dietaryPref } = req.body;
+
+    const preference = await prisma.preference.upsert({
+      where: { userId: req.user.id },
+      create: {
+        userId: req.user.id,
+        favoriteCuisine: favoriteCuisine || 'Italian',
+        typicalBudget: typicalBudget ? String(typicalBudget) : '1500',
+        dietaryPref: dietaryPref || 'Vegetarian',
+      },
+      update: {
+        ...(favoriteCuisine !== undefined && { favoriteCuisine }),
+        ...(typicalBudget !== undefined && { typicalBudget: String(typicalBudget) }),
+        ...(dietaryPref !== undefined && { dietaryPref }),
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Preferences updated successfully!',
+      preference,
+    });
+  } catch (error) {
+    console.error('Update Preference Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error updating preferences.',
+    });
+  }
+};
+
+/**
+ * DELETE / RESET user's preference
+ * DELETE /api/user/preference or DELETE /api/preferences
+ */
+export const deleteUserPreference = async (req, res) => {
+  try {
+    await prisma.preference.deleteMany({
+      where: { userId: req.user.id },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Preferences reset successfully.',
+    });
+  } catch (error) {
+    console.error('Delete Preference Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error resetting preferences.',
     });
   }
 };

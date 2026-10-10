@@ -5,6 +5,7 @@ import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
+import preferenceRoutes from "./routes/preference.routes.js";
 
 // Load environment variables
 dotenv.config();
@@ -43,6 +44,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/profile", userRoutes);
+app.use("/api/preferences", preferenceRoutes);
+app.use("/api/preference", preferenceRoutes);
 
 // Root Route
 app.get("/", (req, res) => {

@@ -50,12 +50,19 @@ export const register = async (req, res) => {
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
-    // Create user in database
+    // Create user and connected preference in database
     const newUser = await prisma.user.create({
       data: {
         name: name.trim(),
         email: normalizedEmail,
         passwordHash,
+        preference: {
+          create: {
+            favoriteCuisine: 'Italian',
+            typicalBudget: '1500',
+            dietaryPref: 'Vegetarian',
+          },
+        },
       },
       select: {
         id: true,
@@ -63,13 +70,35 @@ export const register = async (req, res) => {
         email: true,
         phone: true,
         bio: true,
-        favoriteCuisine: true,
-        typicalBudget: true,
-        dietaryPref: true,
         createdAt: true,
         updatedAt: true,
+        preference: {
+          select: {
+            id: true,
+            userId: true,
+            favoriteCuisine: true,
+            typicalBudget: true,
+            dietaryPref: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
       },
     });
+
+    const safeUser = {
+      id: newUser.id,
+      name: newUser.name,
+      email: newUser.email,
+      phone: newUser.phone,
+      bio: newUser.bio,
+      preference: newUser.preference,
+      favoriteCuisine: newUser.preference?.favoriteCuisine || 'Italian',
+      typicalBudget: newUser.preference?.typicalBudget || '1500',
+      dietaryPref: newUser.preference?.dietaryPref || 'Vegetarian',
+      createdAt: newUser.createdAt,
+      updatedAt: newUser.updatedAt,
+    };
 
     // Generate token and set HTTP-only cookie
     const token = generateToken(newUser.id);
@@ -78,7 +107,7 @@ export const register = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: 'Account created successfully!',
-      user: newUser,
+      user: safeUser,
     });
   } catch (error) {
     console.error('Registration Error:', error);
@@ -106,9 +135,12 @@ export const login = async (req, res) => {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Find user by email
+    // Find user by email including connected preference
     const user = await prisma.user.findUnique({
       where: { email: normalizedEmail },
+      include: {
+        preference: true,
+      },
     });
 
     if (!user) {
@@ -137,9 +169,10 @@ export const login = async (req, res) => {
       email: user.email,
       phone: user.phone || null,
       bio: user.bio || null,
-      favoriteCuisine: user.favoriteCuisine || 'Italian',
-      typicalBudget: user.typicalBudget || '1500',
-      dietaryPref: user.dietaryPref || 'Vegetarian',
+      preference: user.preference || null,
+      favoriteCuisine: user.preference?.favoriteCuisine || 'Italian',
+      typicalBudget: user.preference?.typicalBudget || '1500',
+      dietaryPref: user.preference?.dietaryPref || 'Vegetarian',
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
@@ -249,18 +282,40 @@ export const updateProfile = async (req, res) => {
         email: true,
         phone: true,
         bio: true,
-        favoriteCuisine: true,
-        typicalBudget: true,
-        dietaryPref: true,
         createdAt: true,
         updatedAt: true,
+        preference: {
+          select: {
+            id: true,
+            userId: true,
+            favoriteCuisine: true,
+            typicalBudget: true,
+            dietaryPref: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
       },
     });
+
+    const safeUser = {
+      id: updatedUser.id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      phone: updatedUser.phone || null,
+      bio: updatedUser.bio || null,
+      preference: updatedUser.preference || null,
+      favoriteCuisine: updatedUser.preference?.favoriteCuisine || 'Italian',
+      typicalBudget: updatedUser.preference?.typicalBudget || '1500',
+      dietaryPref: updatedUser.preference?.dietaryPref || 'Vegetarian',
+      createdAt: updatedUser.createdAt,
+      updatedAt: updatedUser.updatedAt,
+    };
 
     return res.status(200).json({
       success: true,
       message: 'Profile updated successfully!',
-      user: updatedUser,
+      user: safeUser,
     });
   } catch (error) {
     console.error('Update Profile Error:', error);

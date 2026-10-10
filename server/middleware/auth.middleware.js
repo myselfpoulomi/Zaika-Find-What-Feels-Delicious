@@ -41,7 +41,7 @@ export const authenticateUser = async (req, res, next) => {
       });
     }
 
-    // 3. Find user in database
+    // 3. Find user in database with connected preference
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
       select: {
@@ -50,9 +50,17 @@ export const authenticateUser = async (req, res, next) => {
         email: true,
         phone: true,
         bio: true,
-        favoriteCuisine: true,
-        typicalBudget: true,
-        dietaryPref: true,
+        preference: {
+          select: {
+            id: true,
+            userId: true,
+            favoriteCuisine: true,
+            typicalBudget: true,
+            dietaryPref: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
         createdAt: true,
         updatedAt: true,
       },
@@ -65,8 +73,14 @@ export const authenticateUser = async (req, res, next) => {
       });
     }
 
-    // Attach user to request object
-    req.user = user;
+    // Attach user to request object with connected preference
+    const pref = user.preference || {};
+    req.user = {
+      ...user,
+      favoriteCuisine: pref.favoriteCuisine || 'Italian',
+      typicalBudget: pref.typicalBudget || '1500',
+      dietaryPref: pref.dietaryPref || 'Vegetarian',
+    };
     next();
   } catch (error) {
     console.error('Auth Middleware Error:', error);

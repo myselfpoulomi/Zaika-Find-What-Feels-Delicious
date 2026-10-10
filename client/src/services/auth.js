@@ -167,3 +167,38 @@ export async function logoutUser() {
     return { success: true };
   }
 }
+
+// -------------------------------------------------------------
+// 5. USER PREFERENCES (CONNECTED VIA USERID FOREIGN KEY)
+// -------------------------------------------------------------
+
+/**
+ * Fetch current user dining preferences
+ */
+export async function getUserPreferences() {
+  const data = await apiRequest('/api/preferences', {
+    method: 'GET',
+  });
+  return data.preference;
+}
+
+/**
+ * Update current user dining preferences
+ */
+export async function updateUserPreferences(preferences) {
+  const data = await apiRequest('/api/preferences', {
+    method: 'PUT',
+    body: JSON.stringify(preferences),
+  });
+  return data.preference;
+}
+
+/**
+ * Reset / delete current user dining preferences
+ */
+export async function resetUserPreferences() {
+  return apiRequest('/api/preferences', {
+    method: 'DELETE',
+  });
+}
+

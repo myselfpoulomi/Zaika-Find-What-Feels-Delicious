@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import HomePage from './pages/HomePage'
@@ -225,7 +225,7 @@ export default function App() {
     }
   }
 
-  const handleUpdateProfile = (updatedData) => {
+  const handleUpdateProfile = useCallback((updatedData) => {
     setCurrentUser((prev) => {
       const updated = { ...prev, ...updatedData }
       try {
@@ -235,7 +235,7 @@ export default function App() {
       }
       return updated
     })
-  }
+  }, [])
 
   // Automatically verify user session via HTTP-only cookie on mount
   useEffect(() => {
