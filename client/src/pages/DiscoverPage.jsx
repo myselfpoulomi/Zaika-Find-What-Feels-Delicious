@@ -3,8 +3,25 @@ import saffronTableImg from '../assets/saffron_table.jpg'
 import oliveHouseImg from '../assets/olive_house.jpg'
 import goldenHourImg from '../assets/golden_hour.jpg'
 import heroBg from '../assets/hero_bg.jpg'
+import LocationPickerModal from '../components/LocationPickerModal'
 
-// 10 Restaurant Records matching reference screenshots 1, 2, and 3
+// Helper function to calculate real geographical distance in km (Haversine formula)
+function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return 1.5
+  const R = 6371 // Earth radius in km
+  const dLat = (lat2 - lat1) * (Math.PI / 180)
+  const dLon = (lon2 - lon1) * (Math.PI / 180)
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) *
+      Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
+
+// 10 Restaurant Records matching reference screenshots 1, 2, and 3 with real GPS coordinates
 const ALL_RESTAURANTS = [
   {
     id: 1,
@@ -16,7 +33,10 @@ const ALL_RESTAURANTS = [
     offer: 'Up to ₹100 off',
     price: '₹₹',
     budgetCategory: 'mid',
-    distance: '1.2 km away',
+    city: 'Bengaluru',
+    locality: 'Indiranagar',
+    lat: 12.9784,
+    lon: 77.6408,
     distanceKm: 1.2,
     image: saffronTableImg,
     isVeg: true,
@@ -37,7 +57,10 @@ const ALL_RESTAURANTS = [
     offer: 'Up to ₹50 off',
     price: '₹₹',
     budgetCategory: 'mid',
-    distance: '1.8 km away',
+    city: 'Bengaluru',
+    locality: 'Koramangala',
+    lat: 12.9352,
+    lon: 77.6245,
     distanceKm: 1.8,
     image: oliveHouseImg,
     isVeg: false,
@@ -58,7 +81,10 @@ const ALL_RESTAURANTS = [
     offer: 'Up to ₹75 off',
     price: '₹₹',
     budgetCategory: 'budget',
-    distance: '0.8 km away',
+    city: 'Bengaluru',
+    locality: 'Central Bengaluru',
+    lat: 12.9716,
+    lon: 77.5946,
     distanceKm: 0.8,
     image: goldenHourImg,
     isVeg: true,
@@ -79,7 +105,10 @@ const ALL_RESTAURANTS = [
     offer: 'Up to ₹80 off',
     price: '₹₹',
     budgetCategory: 'mid',
-    distance: '2.4 km away',
+    city: 'Bengaluru',
+    locality: 'HSR Layout',
+    lat: 12.9121,
+    lon: 77.6446,
     distanceKm: 2.4,
     image: heroBg,
     isVeg: false,
@@ -99,7 +128,10 @@ const ALL_RESTAURANTS = [
     offer: 'Up to ₹40 off',
     price: '₹₹',
     budgetCategory: 'budget',
-    distance: '2.1 km away',
+    city: 'Bengaluru',
+    locality: 'Whitefield',
+    lat: 12.9698,
+    lon: 77.7500,
     distanceKm: 2.1,
     image: goldenHourImg,
     isVeg: true,
@@ -119,7 +151,10 @@ const ALL_RESTAURANTS = [
     offer: 'Up to ₹120 off',
     price: '₹₹',
     budgetCategory: 'mid',
-    distance: '3.2 km away',
+    city: 'Mumbai',
+    locality: 'Bandra West',
+    lat: 19.0596,
+    lon: 72.8295,
     distanceKm: 3.2,
     image: saffronTableImg,
     isVeg: false,
@@ -139,7 +174,10 @@ const ALL_RESTAURANTS = [
     offer: 'Up to ₹150 off',
     price: '₹₹₹',
     budgetCategory: 'fine',
-    distance: '3.6 km away',
+    city: 'Mumbai',
+    locality: 'Juhu',
+    lat: 19.1075,
+    lon: 72.8263,
     distanceKm: 3.6,
     image: oliveHouseImg,
     isVeg: false,
@@ -159,7 +197,10 @@ const ALL_RESTAURANTS = [
     offer: 'Up to ₹60 off',
     price: '₹₹',
     budgetCategory: 'budget',
-    distance: '1.5 km away',
+    city: 'Delhi NCR',
+    locality: 'Connaught Place',
+    lat: 28.6315,
+    lon: 77.2167,
     distanceKm: 1.5,
     image: goldenHourImg,
     isVeg: true,
@@ -179,7 +220,10 @@ const ALL_RESTAURANTS = [
     offer: 'Up to ₹90 off',
     price: '₹₹',
     budgetCategory: 'mid',
-    distance: '4.1 km away',
+    city: 'Hyderabad',
+    locality: 'Jubilee Hills',
+    lat: 17.4319,
+    lon: 78.4073,
     distanceKm: 4.1,
     image: saffronTableImg,
     isVeg: false,
@@ -199,7 +243,10 @@ const ALL_RESTAURANTS = [
     offer: 'Up to ₹70 off',
     price: '₹₹',
     budgetCategory: 'mid',
-    distance: '2.8 km away',
+    city: 'Kolkata',
+    locality: 'Park Street',
+    lat: 22.5510,
+    lon: 88.3524,
     distanceKm: 2.8,
     image: heroBg,
     isVeg: false,
@@ -221,7 +268,31 @@ export default function DiscoverPage({
   onToggleCompare: externalOnToggleCompare
 }) {
   const [searchQuery, setSearchQuery] = useState(initialQuery)
-  const [selectedCity, setSelectedCity] = useState('Bengaluru')
+  const [selectedLocation, setSelectedLocation] = useState(() => {
+    try {
+      const saved = localStorage.getItem('zaika_selected_location')
+      return saved
+        ? JSON.parse(saved)
+        : {
+            name: 'Bengaluru',
+            formattedAddress: 'Bengaluru, Karnataka, India',
+            city: 'Bengaluru',
+            lat: 12.9716,
+            lon: 77.5946,
+            isCurrentLocation: false,
+          }
+    } catch {
+      return {
+        name: 'Bengaluru',
+        formattedAddress: 'Bengaluru, Karnataka, India',
+        city: 'Bengaluru',
+        lat: 12.9716,
+        lon: 77.5946,
+        isCurrentLocation: false,
+      }
+    }
+  })
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
   const [cuisineFilter, setCuisineFilter] = useState('All cuisines')
   const [budgetFilter, setBudgetFilter] = useState('Any budget')
   const [minRatingFilter, setMinRatingFilter] = useState(true) // 4.7+ active by default in reference
@@ -260,16 +331,45 @@ export default function DiscoverPage({
 
   const [activeMenuModal, setActiveMenuModal] = useState(null)
 
-  // Filter computation
+  // Filter computation with real GPS coordinates & proximity calculation
   const filteredPlaces = useMemo(() => {
-    return ALL_RESTAURANTS.filter((item) => {
+    return ALL_RESTAURANTS.map((item) => {
+      // Calculate real distance from currently selected location coordinates
+      let distKm = calculateHaversineDistance(
+        selectedLocation.lat,
+        selectedLocation.lon,
+        item.lat,
+        item.lon
+      )
+
+      // If restaurant is in a different city, scale distance for display
+      const isSameCity = item.city.toLowerCase() === selectedLocation.city.toLowerCase()
+      if (!isSameCity) {
+        distKm = Math.max(distKm, 12.0)
+      }
+
+      let displayDistance = `${distKm.toFixed(1)} km away`
+      if (distKm < 1.0) {
+        displayDistance = `${Math.round(distKm * 1000)} m away`
+      }
+
+      return {
+        ...item,
+        distanceKm: distKm,
+        displayDistance,
+        isSameCity,
+      }
+    })
+    .filter((item) => {
       // Search Query filter
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim()
         const matchesName = item.name.toLowerCase().includes(q)
         const matchesCuisine = item.cuisine.toLowerCase().includes(q)
         const matchesDesc = item.description.toLowerCase().includes(q)
-        if (!matchesName && !matchesCuisine && !matchesDesc) {
+        const matchesLocality = item.locality?.toLowerCase().includes(q)
+        const matchesCity = item.city?.toLowerCase().includes(q)
+        if (!matchesName && !matchesCuisine && !matchesDesc && !matchesLocality && !matchesCity) {
           return false
         }
       }
@@ -311,13 +411,20 @@ export default function DiscoverPage({
 
       return true
     })
+    .sort((a, b) => {
+      // Prioritize places in the same city, then sort by physical distance
+      if (a.isSameCity && !b.isSameCity) return -1
+      if (!a.isSameCity && b.isSameCity) return 1
+      return a.distanceKm - b.distanceKm
+    })
   }, [
     searchQuery,
     cuisineFilter,
     budgetFilter,
     minRatingFilter,
     vegOnlyFilter,
-    distanceFilter
+    distanceFilter,
+    selectedLocation
   ])
 
   const toggleSelected = (id) => {
@@ -360,7 +467,7 @@ export default function DiscoverPage({
         </div>
 
         {/* 2. Top Search & Location Bar */}
-        <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-5">
+        <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-2">
           {/* Search Input */}
           <div className="flex-1 relative flex items-center bg-white border border-neutral-300 rounded-lg px-3.5 py-2.5 shadow-2xs focus-within:border-[#85312C] focus-within:ring-1 focus-within:ring-[#85312C] transition-all">
             <svg className="w-5 h-5 text-neutral-400 mr-2.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -375,28 +482,34 @@ export default function DiscoverPage({
             />
           </div>
 
-          {/* Location Selector */}
+          {/* Google Maps Location Selector Button */}
           <div className="relative shrink-0">
-            <div className="flex items-center gap-2 bg-white border border-neutral-300 rounded-lg px-3.5 py-2.5 text-sm text-neutral-800 shadow-2xs cursor-pointer hover:border-neutral-400 transition-colors">
-              <svg className="w-4 h-4 text-[#85312C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <select
-                value={selectedCity}
-                onChange={(e) => setSelectedCity(e.target.value)}
-                className="bg-transparent text-sm font-medium text-neutral-800 outline-none cursor-pointer pr-4 appearance-none"
-              >
-                <option value="Bengaluru">Bengaluru</option>
-                <option value="Mumbai">Mumbai</option>
-                <option value="Delhi NCR">Delhi NCR</option>
-                <option value="Kolkata">Kolkata</option>
-                <option value="Hyderabad">Hyderabad</option>
-              </select>
-              <svg className="w-3.5 h-3.5 text-neutral-500 pointer-events-none absolute right-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button
+              type="button"
+              onClick={() => setIsLocationModalOpen(true)}
+              className="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-2.5 bg-white hover:bg-neutral-50 border border-neutral-300 hover:border-[#85312C] rounded-lg px-3.5 py-2.5 text-sm text-neutral-800 shadow-2xs cursor-pointer transition-all group"
+              title="Click to detect current location or search location on map"
+            >
+              <div className="flex items-center gap-2">
+                <div className="relative flex items-center justify-center">
+                  <svg className="w-4 h-4 text-[#85312C] group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  {selectedLocation.isCurrentLocation && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                  )}
+                </div>
+
+                <span className="font-semibold text-neutral-900 group-hover:text-[#85312C] transition-colors truncate max-w-[140px] sm:max-w-[200px]">
+                  {selectedLocation.name}
+                </span>
+              </div>
+
+              <svg className="w-3.5 h-3.5 text-neutral-400 group-hover:text-neutral-600 transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
               </svg>
-            </div>
+            </button>
           </div>
 
           {/* Search Button */}
@@ -407,6 +520,29 @@ export default function DiscoverPage({
             Search
           </button>
         </form>
+
+        {/* Active Location Indicator Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-4 pt-0.5 text-xs text-neutral-500">
+          <div className="flex items-center gap-1.5">
+            <span className="text-neutral-400">Curating spots near:</span>
+            <button
+              type="button"
+              onClick={() => setIsLocationModalOpen(true)}
+              className="inline-flex items-center gap-1.5 bg-[#FAF1E8] hover:bg-[#F4E4D3] text-[#85312C] font-semibold px-2.5 py-1 rounded-full border border-[#85312C]/20 transition-colors cursor-pointer group"
+            >
+              <span>📍 {selectedLocation.name}</span>
+              <span className="text-[11px] text-neutral-500 font-normal">({selectedLocation.city})</span>
+              <span className="text-[10px] text-[#85312C] font-bold group-hover:underline">Change ↗</span>
+            </button>
+          </div>
+
+          {selectedLocation.isCurrentLocation && (
+            <span className="inline-flex items-center gap-1.5 text-[11px] text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>Live GPS Located</span>
+            </span>
+          )}
+        </div>
 
         {/* 3. Filter Controls Row */}
         <div className="flex flex-wrap items-center gap-2.5 pb-6 pt-1 text-xs">
@@ -600,12 +736,19 @@ export default function DiscoverPage({
                       <div className="flex items-center gap-3 text-xs text-neutral-500 mb-3.5 font-normal">
                         <span>{restaurant.price}</span>
                         <span className="flex items-center gap-1">
-                          <svg className="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-3.5 h-3.5 text-[#85312C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                           </svg>
-                          {restaurant.distance}
+                          <span className="font-medium text-neutral-700">
+                            {restaurant.displayDistance || restaurant.distance}
+                          </span>
                         </span>
+                        {restaurant.locality && (
+                          <span className="text-[11px] bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded-md truncate max-w-[120px]">
+                            {restaurant.locality}
+                          </span>
+                        )}
                       </div>
 
                       {/* Action Buttons: View Menu & Selected / Compare */}
@@ -707,6 +850,22 @@ export default function DiscoverPage({
           </div>
         </div>
       )}
+
+      {/* Google Map-like Location Picker Modal */}
+      <LocationPickerModal
+        isOpen={isLocationModalOpen}
+        onClose={() => setIsLocationModalOpen(false)}
+        currentLocation={selectedLocation}
+        onSelectLocation={(newLoc) => {
+          setSelectedLocation(newLoc)
+          try {
+            localStorage.setItem('zaika_selected_location', JSON.stringify(newLoc))
+          } catch (e) {
+            console.warn(e)
+          }
+        }}
+      />
     </main>
   )
 }
+
