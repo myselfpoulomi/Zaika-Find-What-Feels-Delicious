@@ -11,12 +11,17 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  name         String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String   @id @default(cuid())
+  email           String   @unique
+  passwordHash    String
+  name            String
+  phone           String?
+  bio             String?
+  favoriteCuisine String?  @default("Italian")
+  typicalBudget   String?  @default("1500")
+  dietaryPref     String?  @default("Vegetarian")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@map("users")
 }
