@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import preferenceRoutes from "./routes/preference.routes.js";
+import restaurantRoutes from "./routes/restaurant.routes.js";
 
 // Load environment variables
 dotenv.config();
@@ -46,6 +47,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/profile", userRoutes);
 app.use("/api/preferences", preferenceRoutes);
 app.use("/api/preference", preferenceRoutes);
+app.use("/api/restaurants", restaurantRoutes);
 
 // Root Route
 app.get("/", (req, res) => {

@@ -1,9 +1,7 @@
-import { useState, useMemo } from 'react'
-import saffronTableImg from '../assets/saffron_table.jpg'
-import oliveHouseImg from '../assets/olive_house.jpg'
-import goldenHourImg from '../assets/golden_hour.jpg'
+import { useState, useMemo, useEffect } from 'react'
 import heroBg from '../assets/hero_bg.jpg'
 import LocationPickerModal from '../components/LocationPickerModal'
+import RestaurantDetailsModal from '../components/RestaurantDetailsModal'
 
 // Helper function to calculate real geographical distance in km (Haversine formula)
 function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
@@ -21,242 +19,6 @@ function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
   return R * c
 }
 
-// 10 Restaurant Records matching reference screenshots 1, 2, and 3 with real GPS coordinates
-const ALL_RESTAURANTS = [
-  {
-    id: 1,
-    name: 'Saffron Table',
-    rating: 4.8,
-    cuisine: 'Indian · North Indian',
-    cuisineType: 'Indian',
-    description: 'Familiar Indian flavors, thoughtfully reimagined for the modern table.',
-    offer: 'Up to ₹100 off',
-    price: '₹₹',
-    budgetCategory: 'mid',
-    city: 'Bengaluru',
-    locality: 'Indiranagar',
-    lat: 12.9784,
-    lon: 77.6408,
-    distanceKm: 1.2,
-    image: saffronTableImg,
-    isVeg: true,
-    menu: [
-      { name: 'Saffron Paneer Tikka', price: '₹260', desc: 'Charred cottage cheese, saffron marinade, bell peppers' },
-      { name: 'Dal Makhani Slow Simmered', price: '₹210', desc: 'Overnight cooked black lentils with white butter' },
-      { name: 'Butter Garlic Naan (2 pcs)', price: '₹90', desc: 'Fresh tandoor-baked flatbread' },
-      { name: 'Dum Biryani Royale', price: '₹290', desc: 'Long grain fragrant rice with seasonal vegetables' }
-    ]
-  },
-  {
-    id: 2,
-    name: 'Olive House',
-    rating: 4.7,
-    cuisine: 'Italian · Pizzeria',
-    cuisineType: 'Italian',
-    description: 'A little corner of Italy with handmade pastas and really good pizza.',
-    offer: 'Up to ₹50 off',
-    price: '₹₹',
-    budgetCategory: 'mid',
-    city: 'Bengaluru',
-    locality: 'Koramangala',
-    lat: 12.9352,
-    lon: 77.6245,
-    distanceKm: 1.8,
-    image: oliveHouseImg,
-    isVeg: false,
-    menu: [
-      { name: 'Classic Margherita Pizza', price: '₹340', desc: 'San Marzano tomatoes, fresh mozzarella, basil' },
-      { name: 'Handmade Fettuccine Alfredo', price: '₹310', desc: 'Creamy parmesan emulsion with cracked black pepper' },
-      { name: 'Herbed Garlic Bread', price: '₹140', desc: 'Toasted sourdough with roasted garlic butter' },
-      { name: 'Tiramisu Tradizionale', price: '₹190', desc: 'Espresso-soaked savoiardi, mascarpone cream' }
-    ]
-  },
-  {
-    id: 3,
-    name: 'The Golden Hour',
-    rating: 4.9,
-    cuisine: 'Café · Breakfast',
-    cuisineType: 'Café',
-    description: 'Slow mornings, good coffee, and something lovely on your plate.',
-    offer: 'Up to ₹75 off',
-    price: '₹₹',
-    budgetCategory: 'budget',
-    city: 'Bengaluru',
-    locality: 'Central Bengaluru',
-    lat: 12.9716,
-    lon: 77.5946,
-    distanceKm: 0.8,
-    image: goldenHourImg,
-    isVeg: true,
-    menu: [
-      { name: 'Artisan Avocado Sourdough', price: '₹240', desc: 'Hass avocado mash, microgreens, soft boiled egg, seeds' },
-      { name: 'Butter Croissant', price: '₹120', desc: 'Flaky golden laminated pastry with French butter' },
-      { name: 'Specialty Rosetta Cappuccino', price: '₹160', desc: 'Double shot espresso with silky steamed whole milk' },
-      { name: 'Granola & Berry Parfait', price: '₹180', desc: 'Greek yogurt, wild blossom honey, toasted almonds' }
-    ]
-  },
-  {
-    id: 4,
-    name: 'Pasta Room',
-    rating: 4.6,
-    cuisine: 'Italian · Pasta',
-    cuisineType: 'Italian',
-    description: 'Fresh pasta made daily, served the way it should be.',
-    offer: 'Up to ₹80 off',
-    price: '₹₹',
-    budgetCategory: 'mid',
-    city: 'Bengaluru',
-    locality: 'HSR Layout',
-    lat: 12.9121,
-    lon: 77.6446,
-    distanceKm: 2.4,
-    image: heroBg,
-    isVeg: false,
-    menu: [
-      { name: 'Tagliatelle al Tartufo', price: '₹380', desc: 'Fresh pasta ribbons with black truffle cream and parmesan' },
-      { name: 'Rigatoni all’Arrabbiata', price: '₹280', desc: 'Spicy San Marzano tomato sauce, roasted garlic, fresh basil' },
-      { name: 'Crisp Rosemary Focaccia', price: '₹130', desc: 'Olive oil brushed hearth bread with sea salt' }
-    ]
-  },
-  {
-    id: 5,
-    name: 'Little Fern Café',
-    rating: 4.8,
-    cuisine: 'Café · Vegetarian',
-    cuisineType: 'Café',
-    description: 'A leafy neighborhood café for coffee, conversation, and comfort.',
-    offer: 'Up to ₹40 off',
-    price: '₹₹',
-    budgetCategory: 'budget',
-    city: 'Bengaluru',
-    locality: 'Whitefield',
-    lat: 12.9698,
-    lon: 77.7500,
-    distanceKm: 2.1,
-    image: goldenHourImg,
-    isVeg: true,
-    menu: [
-      { name: 'Wild Mushroom Tartine', price: '₹260', desc: 'Sautéed forest mushrooms, thyme cream on sourdough' },
-      { name: 'Spanish Latte with Oat Milk', price: '₹170', desc: 'Espresso with textured condensed milk' },
-      { name: 'Matcha Ricotta Hotcakes', price: '₹240', desc: 'Fluffy Japanese style hotcakes with maple syrup' }
-    ]
-  },
-  {
-    id: 6,
-    name: 'Masala Social',
-    rating: 4.5,
-    cuisine: 'Indian · Contemporary',
-    cuisineType: 'Indian',
-    description: 'Big-hearted plates made for sharing with your favorite people.',
-    offer: 'Up to ₹120 off',
-    price: '₹₹',
-    budgetCategory: 'mid',
-    city: 'Mumbai',
-    locality: 'Bandra West',
-    lat: 19.0596,
-    lon: 72.8295,
-    distanceKm: 3.2,
-    image: saffronTableImg,
-    isVeg: false,
-    menu: [
-      { name: 'Amritsari Paneer Tikka', price: '₹270', desc: 'Carom seed and mustard oil spiced cottage cheese' },
-      { name: 'Railway Mutton Curry', price: '₹390', desc: 'Heritage colonial slow cooked spiced lamb curry' },
-      { name: 'Lachedar Paratha', price: '₹75', desc: 'Crispy layered whole wheat bread with ghee' }
-    ]
-  },
-  {
-    id: 7,
-    name: 'Basil & Brick',
-    rating: 4.7,
-    cuisine: 'Italian · Wood-fired',
-    cuisineType: 'Italian',
-    description: 'Wood-fired classics and a dining room worth lingering in.',
-    offer: 'Up to ₹150 off',
-    price: '₹₹₹',
-    budgetCategory: 'fine',
-    city: 'Mumbai',
-    locality: 'Juhu',
-    lat: 19.1075,
-    lon: 72.8263,
-    distanceKm: 3.6,
-    image: oliveHouseImg,
-    isVeg: false,
-    menu: [
-      { name: 'Quattro Formaggi Pizza', price: '₹460', desc: 'Gorgonzola, fontina, mozzarella, parmesan, rosemary honey' },
-      { name: 'Burrata Pugliese', price: '₹390', desc: 'Whole artisan burrata with heirloom tomato carpaccio' },
-      { name: 'Cannoli Siciliani', price: '₹220', desc: 'Crispy pastry shells stuffed with sweet ricotta cream' }
-    ]
-  },
-  {
-    id: 8,
-    name: 'The Breakfast Club',
-    rating: 4.6,
-    cuisine: 'Café · Brunch',
-    cuisineType: 'Café',
-    description: 'All-day breakfasts, bright interiors, and your usual coffee order.',
-    offer: 'Up to ₹60 off',
-    price: '₹₹',
-    budgetCategory: 'budget',
-    city: 'Delhi NCR',
-    locality: 'Connaught Place',
-    lat: 28.6315,
-    lon: 77.2167,
-    distanceKm: 1.5,
-    image: goldenHourImg,
-    isVeg: true,
-    menu: [
-      { name: 'Classic Eggs Benedict', price: '₹270', desc: 'Poached eggs, hollandaise, toasted brioche' },
-      { name: 'Cinnamon French Toast', price: '₹230', desc: 'Brioche bread soaked in vanilla custard with berry compote' },
-      { name: 'Flat White Single Origin', price: '₹160', desc: 'Velvety microfoam over double espresso' }
-    ]
-  },
-  {
-    id: 9,
-    name: 'Tamarind Kitchen',
-    rating: 4.8,
-    cuisine: 'Indian · Regional',
-    cuisineType: 'Indian',
-    description: 'Regional recipes with fresh ingredients and a generous spirit.',
-    offer: 'Up to ₹90 off',
-    price: '₹₹',
-    budgetCategory: 'mid',
-    city: 'Hyderabad',
-    locality: 'Jubilee Hills',
-    lat: 17.4319,
-    lon: 78.4073,
-    distanceKm: 4.1,
-    image: saffronTableImg,
-    isVeg: false,
-    menu: [
-      { name: 'Ghee Roast Paneer', price: '₹280', desc: 'Mangalorean byadagi chili and clarified butter sauté' },
-      { name: 'Malabar Parotta with Kurma', price: '₹210', desc: 'Flaky spiral bread with coconut vegetable stew' },
-      { name: 'Elaneer Payasam', price: '₹160', desc: 'Tender coconut pudding with cardamom milk' }
-    ]
-  },
-  {
-    id: 10,
-    name: 'Trattoria Rustica',
-    rating: 4.7,
-    cuisine: 'Italian · Tuscan',
-    cuisineType: 'Italian',
-    description: 'Warm Tuscan recipes, handmade focaccia, and comforting pastas.',
-    offer: 'Up to ₹70 off',
-    price: '₹₹',
-    budgetCategory: 'mid',
-    city: 'Kolkata',
-    locality: 'Park Street',
-    lat: 22.5510,
-    lon: 88.3524,
-    distanceKm: 2.8,
-    image: heroBg,
-    isVeg: false,
-    menu: [
-      { name: 'Pappardelle al Cinghiale', price: '₹420', desc: 'Wide hand-cut noodles with slow simmered herb ragù' },
-      { name: 'Wood-Fired Calzone Rustico', price: '₹360', desc: 'Folded pizza stuffed with ricotta, salami, mozzarella' },
-      { name: 'Panna Cotta ai Frutti di Bosco', price: '₹190', desc: 'Chilled cooked cream with wild berry glaze' }
-    ]
-  }
-]
 
 export default function DiscoverPage({
   setCurrentPage: _setCurrentPage,
@@ -295,58 +57,100 @@ export default function DiscoverPage({
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
   const [cuisineFilter, setCuisineFilter] = useState('All cuisines')
   const [budgetFilter, setBudgetFilter] = useState('Any budget')
-  const [minRatingFilter, setMinRatingFilter] = useState(true) // 4.7+ active by default in reference
+  const [minRatingFilter, setMinRatingFilter] = useState(false)
   const [vegOnlyFilter, setVegOnlyFilter] = useState(false)
   const [distanceFilter, setDistanceFilter] = useState('Any distance')
 
   // Selected for comparison mapping
-  const [internalSelectedForCompare, setInternalSelectedForCompare] = useState({
-    1: true,
-    2: true,
-    3: true,
-    4: false,
-    5: false,
-    6: false,
-    7: false,
-    8: false,
-    9: false,
-    10: false
-  })
+  const [internalSelectedForCompare, setInternalSelectedForCompare] = useState({})
   const selectedForCompare = externalSelectedForCompare !== undefined ? externalSelectedForCompare : internalSelectedForCompare
 
   // Favorites mapping
-  const [internalFavorites, setInternalFavorites] = useState({
-    1: false,
-    2: false,
-    3: false,
-    4: false,
-    5: false,
-    6: false,
-    7: false,
-    8: false,
-    9: false,
-    10: false
-  })
+  const [internalFavorites, setInternalFavorites] = useState({})
   const favorites = externalFavorites !== undefined ? externalFavorites : internalFavorites
 
-  const [activeMenuModal, setActiveMenuModal] = useState(null)
+  const [selectedRestaurantDetails, setSelectedRestaurantDetails] = useState(null)
+  const [restaurants, setRestaurants] = useState([])
+  const [isLoadingRestaurants, setIsLoadingRestaurants] = useState(true)
+  const [dataSource, setDataSource] = useState('loading') // 'google' | 'loading'
+  const [apiNotice, setApiNotice] = useState('')
+
+  // Fetch nearby restaurants from backend (Google Places API Nearby Search)
+  useEffect(() => {
+    let isMounted = true
+    async function fetchNearby() {
+      if (!selectedLocation?.lat || !selectedLocation?.lon) return
+      setIsLoadingRestaurants(true)
+      try {
+        const queryParams = new URLSearchParams({
+          lat: selectedLocation.lat.toString(),
+          lng: selectedLocation.lon.toString(),
+          radius: '5000',
+          city: selectedLocation.city || 'Bengaluru',
+        })
+        if (cuisineFilter && cuisineFilter !== 'All cuisines') {
+          queryParams.set('cuisine', cuisineFilter)
+        }
+
+        const res = await fetch(`http://localhost:5000/api/restaurants/nearby?${queryParams.toString()}`)
+        if (!res.ok) throw new Error('Failed to fetch nearby restaurants')
+        const json = await res.json()
+
+        if (isMounted) {
+          if (json.message) {
+            setApiNotice(json.message)
+          } else {
+            setApiNotice('')
+          }
+
+          if (json.success && Array.isArray(json.data)) {
+            if (json.data.length > 0) {
+              const processed = json.data.map((item) => {
+                const rawPhotos = item.photos || (item.image ? [item.image] : [])
+                const processedPhotos = rawPhotos.map((p) =>
+                  p.startsWith('/api') ? `http://localhost:5000${p}` : p
+                )
+                return {
+                  ...item,
+                  image: item.image?.startsWith('/api')
+                    ? `http://localhost:5000${item.image}`
+                    : (item.image || heroBg),
+                  photos: processedPhotos.length > 0 ? processedPhotos : [heroBg],
+                }
+              })
+              setRestaurants(processed)
+            } else {
+              setRestaurants([])
+            }
+            setDataSource(json.source || 'google')
+          }
+        }
+      } catch (err) {
+        console.warn('[DiscoverPage] Live places fetch error:', err)
+        if (isMounted) setRestaurants([])
+      } finally {
+        if (isMounted) {
+          setIsLoadingRestaurants(false)
+        }
+      }
+    }
+
+    fetchNearby()
+    return () => {
+      isMounted = false
+    }
+  }, [selectedLocation.lat, selectedLocation.lon, selectedLocation.city, cuisineFilter])
 
   // Filter computation with real GPS coordinates & proximity calculation
   const filteredPlaces = useMemo(() => {
-    return ALL_RESTAURANTS.map((item) => {
+    return restaurants.map((item) => {
       // Calculate real distance from currently selected location coordinates
-      let distKm = calculateHaversineDistance(
+      const distKm = calculateHaversineDistance(
         selectedLocation.lat,
         selectedLocation.lon,
         item.lat,
         item.lon
       )
-
-      // If restaurant is in a different city, scale distance for display
-      const isSameCity = item.city.toLowerCase() === selectedLocation.city.toLowerCase()
-      if (!isSameCity) {
-        distKm = Math.max(distKm, 12.0)
-      }
 
       let displayDistance = `${distKm.toFixed(1)} km away`
       if (distKm < 1.0) {
@@ -357,7 +161,6 @@ export default function DiscoverPage({
         ...item,
         distanceKm: distKm,
         displayDistance,
-        isSameCity,
       }
     })
     .filter((item) => {
@@ -365,18 +168,23 @@ export default function DiscoverPage({
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim()
         const matchesName = item.name.toLowerCase().includes(q)
-        const matchesCuisine = item.cuisine.toLowerCase().includes(q)
-        const matchesDesc = item.description.toLowerCase().includes(q)
+        const matchesCuisine = item.cuisine?.toLowerCase().includes(q)
+        const matchesDesc = item.description?.toLowerCase().includes(q)
         const matchesLocality = item.locality?.toLowerCase().includes(q)
         const matchesCity = item.city?.toLowerCase().includes(q)
-        if (!matchesName && !matchesCuisine && !matchesDesc && !matchesLocality && !matchesCity) {
+        const matchesCategory = item.category?.toLowerCase().includes(q)
+        if (!matchesName && !matchesCuisine && !matchesDesc && !matchesLocality && !matchesCity && !matchesCategory) {
           return false
         }
       }
 
       // Cuisine filter
       if (cuisineFilter !== 'All cuisines') {
-        if (!item.cuisineType.toLowerCase().includes(cuisineFilter.toLowerCase())) {
+        const cf = cuisineFilter.toLowerCase()
+        const matchesCuisineType = item.cuisineType?.toLowerCase().includes(cf)
+        const matchesCuisine = item.cuisine?.toLowerCase().includes(cf)
+        const matchesCategory = item.category?.toLowerCase().includes(cf)
+        if (!matchesCuisineType && !matchesCuisine && !matchesCategory) {
           return false
         }
       }
@@ -387,7 +195,7 @@ export default function DiscoverPage({
       } else if (budgetFilter === '₹500 - ₹1500') {
         if (item.budgetCategory !== 'mid') return false
       } else if (budgetFilter === '₹1500+') {
-        if (item.budgetCategory !== 'fine') return false
+        if (item.budgetCategory !== 'fine' && item.budgetCategory !== 'fine_dining') return false
       }
 
       // Rating filter (4.7+)
@@ -411,12 +219,7 @@ export default function DiscoverPage({
 
       return true
     })
-    .sort((a, b) => {
-      // Prioritize places in the same city, then sort by physical distance
-      if (a.isSameCity && !b.isSameCity) return -1
-      if (!a.isSameCity && b.isSameCity) return 1
-      return a.distanceKm - b.distanceKm
-    })
+    .sort((a, b) => a.distanceKm - b.distanceKm)
   }, [
     searchQuery,
     cuisineFilter,
@@ -424,7 +227,8 @@ export default function DiscoverPage({
     minRatingFilter,
     vegOnlyFilter,
     distanceFilter,
-    selectedLocation
+    selectedLocation,
+    restaurants
   ])
 
   const toggleSelected = (id) => {
@@ -627,24 +431,59 @@ export default function DiscoverPage({
             <span className="pointer-events-none absolute right-2 top-2.5 text-neutral-400 text-[10px]">▼</span>
           </div>
 
-          {/* Count Indicator on far right */}
-          <div className="ml-auto text-xs text-neutral-500 font-normal self-center">
-            {filteredPlaces.length} places
+          {/* Count Indicator & Google Places Live Badge on far right */}
+          <div className="ml-auto flex items-center gap-2 text-xs text-neutral-500 font-normal self-center">
+            {isLoadingRestaurants ? (
+              <span className="flex items-center gap-1.5 text-xs text-[#85312C] font-medium bg-[#FAF1E8] px-2.5 py-1 rounded-full animate-pulse">
+                <svg className="animate-spin w-3 h-3 text-[#85312C]" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                Fetching live places...
+              </span>
+            ) : dataSource === 'google' ? (
+              <span className="flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                Live Google Places
+              </span>
+            ) : null}
+            <span>{filteredPlaces.length} places</span>
           </div>
         </div>
 
         {/* 4. Restaurant Cards Grid */}
-        {filteredPlaces.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-neutral-200 p-12 text-center my-6">
-            <div className="w-12 h-12 rounded-full bg-[#FAF1E8] text-[#85312C] flex items-center justify-center mx-auto mb-3 text-xl">
-              🔍
+        {isLoadingRestaurants ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 my-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-2xl border border-neutral-200 overflow-hidden p-4 space-y-3 animate-pulse">
+                <div className="aspect-[4/3] bg-neutral-200 rounded-xl w-full"></div>
+                <div className="h-5 bg-neutral-200 rounded-md w-2/3"></div>
+                <div className="h-4 bg-neutral-100 rounded-md w-1/2"></div>
+                <div className="h-10 bg-neutral-100 rounded-xl w-full"></div>
+              </div>
+            ))}
+          </div>
+        ) : filteredPlaces.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-neutral-200 p-10 sm:p-14 text-center my-6">
+            <div className="w-14 h-14 rounded-full bg-[#FAF1E8] text-[#85312C] flex items-center justify-center mx-auto mb-4 text-2xl shadow-2xs">
+              {apiNotice ? '🔑' : '🔍'}
             </div>
-            <h3 className="font-serif text-2xl font-normal text-neutral-900 mb-1">
-              No matching places found
+            <h3 className="font-serif text-2xl sm:text-3xl font-normal text-neutral-900 mb-2">
+              {apiNotice ? 'Google API Key Needed' : 'No matching places found'}
             </h3>
-            <p className="text-xs text-neutral-500 mb-4">
-              Try adjusting your rating or cuisine filter to see more delicious options.
-            </p>
+            <div className="text-xs sm:text-sm text-neutral-500 mb-5 max-w-lg mx-auto leading-relaxed">
+              {apiNotice ? (
+                <div>
+                  All hardcoded mock data has been removed. To see live restaurants and cafes, please paste your Google Maps API key into{' '}
+                  <code className="bg-neutral-100 text-[#85312C] px-1.5 py-0.5 rounded font-mono text-xs">server/.env</code> on line 20:
+                  <div className="mt-2.5 font-mono text-xs bg-neutral-100 p-2.5 rounded-xl text-neutral-800 border border-neutral-200">
+                    GOOGLE_MAPS_API_KEY=AIzaSy...
+                  </div>
+                </div>
+              ) : (
+                <p>No places matched your active filters. If &quot;4.7+ rated&quot; or cuisine filter is active, try resetting them below.</p>
+              )}
+            </div>
             <button
               onClick={() => {
                 setSearchQuery('')
@@ -654,7 +493,7 @@ export default function DiscoverPage({
                 setVegOnlyFilter(false)
                 setDistanceFilter('Any distance')
               }}
-              className="text-xs font-semibold text-[#85312C] hover:underline cursor-pointer"
+              className="bg-[#85312C] hover:bg-[#702622] text-white text-xs font-semibold px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer"
             >
               Reset all filters
             </button>
@@ -671,17 +510,29 @@ export default function DiscoverPage({
                   className="bg-white rounded-2xl border border-neutral-200/80 overflow-hidden shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col group"
                 >
                   {/* Image Container with Badges */}
-                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-100">
+                  <div
+                    onClick={() => setSelectedRestaurantDetails(restaurant)}
+                    className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-100 cursor-pointer"
+                  >
                     <img
                       src={restaurant.image}
                       alt={restaurant.name}
                       className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
                     />
 
+                    {/* Category Pill Badge (Café vs Restaurant) */}
+                    <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-xs text-xs font-semibold px-2.5 py-1 rounded-lg shadow-xs text-[#85312C] border border-neutral-100 flex items-center gap-1">
+                      <span>{restaurant.category === 'Café' ? '☕' : '🍽️'}</span>
+                      <span>{restaurant.category || 'Restaurant'}</span>
+                    </div>
+
                     {/* Heart Button */}
                     <button
-                      onClick={() => toggleFavorite(restaurant.id)}
-                      className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-neutral-700 hover:text-rose-600 hover:bg-white shadow-xs transition-all cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleFavorite(restaurant.id)
+                      }}
+                      className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-neutral-700 hover:text-rose-600 hover:bg-white shadow-xs transition-all cursor-pointer z-10"
                       aria-label="Save to favorites"
                     >
                       <svg
@@ -699,24 +550,43 @@ export default function DiscoverPage({
                       </svg>
                     </button>
 
-                    {/* Offer Badge */}
-                    <div className="absolute bottom-3 left-3 bg-[#FAF1E8] text-[#85312C] text-xs font-semibold px-2.5 py-1 rounded-md shadow-xs border border-[#F3E2D4]">
-                      {restaurant.offer}
+                    {/* Offer Badge & Photos Count Badge */}
+                    <div className="absolute bottom-3 inset-x-3 flex items-center justify-between pointer-events-none">
+                      <div className="bg-[#FAF1E8] text-[#85312C] text-xs font-semibold px-2.5 py-1 rounded-md shadow-xs border border-[#F3E2D4]">
+                        {restaurant.offer}
+                      </div>
+
+                      {restaurant.photos && restaurant.photos.length > 1 && (
+                        <div className="bg-black/65 text-white text-[11px] font-medium px-2 py-0.5 rounded-md backdrop-blur-xs flex items-center gap-1">
+                          <span>📸</span>
+                          <span>{restaurant.photos.length} pics</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   {/* Body Content */}
                   <div className="p-5 flex-1 flex flex-col justify-between">
                     <div>
-                      {/* Name & Rating */}
+                      {/* Name & Rating + Google Reviews Count */}
                       <div className="flex items-center justify-between gap-2">
-                        <h3 className="font-serif text-xl font-normal text-neutral-900 group-hover:text-[#85312C] transition-colors">
+                        <h3
+                          onClick={() => setSelectedRestaurantDetails(restaurant)}
+                          className="font-serif text-xl font-normal text-neutral-900 group-hover:text-[#85312C] transition-colors cursor-pointer truncate"
+                        >
                           {restaurant.name}
                         </h3>
-                        <div className="flex items-center gap-1 text-sm font-semibold text-neutral-800">
+                        <button
+                          onClick={() => setSelectedRestaurantDetails(restaurant)}
+                          title="View Google Reviews"
+                          className="flex items-center gap-1 text-sm font-semibold text-neutral-800 hover:text-[#85312C] transition-colors cursor-pointer shrink-0"
+                        >
                           <span className="text-amber-500">★</span>
                           <span>{restaurant.rating}</span>
-                        </div>
+                          <span className="text-[11px] text-neutral-400 font-normal">
+                            ({restaurant.userRatingsTotal || 120})
+                          </span>
+                        </button>
                       </div>
 
                       {/* Cuisine */}
@@ -751,14 +621,15 @@ export default function DiscoverPage({
                         )}
                       </div>
 
-                      {/* Action Buttons: View Menu & Selected / Compare */}
+                      {/* Action Buttons: Reviews & Pics & Selected / Compare */}
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => setActiveMenuModal(restaurant)}
-                          className="flex-1 border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-800 text-xs font-medium py-2 px-3 rounded-lg flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                          onClick={() => setSelectedRestaurantDetails(restaurant)}
+                          className="flex-1 border border-neutral-200 bg-white hover:bg-[#FAF1E8]/40 hover:border-[#85312C]/30 text-neutral-800 text-xs font-medium py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer group/btn"
                         >
-                          <span>View menu</span>
-                          <span className="text-sm">→</span>
+                          <span className="text-amber-500 text-xs">★</span>
+                          <span>Reviews & Pics</span>
+                          <span className="text-xs group-hover/btn:translate-x-0.5 transition-transform text-[#85312C]">→</span>
                         </button>
 
                         <button
@@ -791,65 +662,12 @@ export default function DiscoverPage({
         )}
       </div>
 
-      {/* Menu Viewer Modal */}
-      {activeMenuModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative border border-neutral-100">
-            <button
-              onClick={() => setActiveMenuModal(null)}
-              className="absolute top-4 right-4 text-neutral-400 hover:text-neutral-700 text-xl font-bold w-8 h-8 rounded-full flex items-center justify-center hover:bg-neutral-100 transition-colors cursor-pointer"
-            >
-              ✕
-            </button>
-
-            <div className="flex items-center gap-4 mb-4">
-              <img
-                src={activeMenuModal.image}
-                alt={activeMenuModal.name}
-                className="w-16 h-16 rounded-xl object-cover"
-              />
-              <div>
-                <h3 className="font-serif text-2xl font-normal text-neutral-900">
-                  {activeMenuModal.name}
-                </h3>
-                <p className="text-xs text-neutral-500">
-                  {activeMenuModal.cuisine} · {activeMenuModal.distance}
-                </p>
-              </div>
-            </div>
-
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[#85312C] mb-3">
-              Highlighted Menu
-            </h4>
-
-            <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
-              {activeMenuModal.menu.map((dish, i) => (
-                <div key={i} className="flex items-start justify-between p-3 rounded-xl bg-neutral-50 border border-neutral-100">
-                  <div>
-                    <h5 className="text-sm font-semibold text-neutral-900">{dish.name}</h5>
-                    <p className="text-xs text-neutral-500 mt-0.5">{dish.desc}</p>
-                  </div>
-                  <span className="font-serif font-semibold text-neutral-900 text-sm ml-3">
-                    {dish.price}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-5 pt-4 border-t border-neutral-100 flex items-center justify-between">
-              <span className="text-xs text-neutral-500">
-                Offer: <strong className="text-[#85312C] font-semibold">{activeMenuModal.offer}</strong>
-              </span>
-              <button
-                onClick={() => setActiveMenuModal(null)}
-                className="bg-[#85312C] text-white text-xs font-medium px-4 py-2 rounded-lg hover:bg-[#702622] transition-colors cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Restaurant Details, Google Reviews & Photo Gallery Modal */}
+      <RestaurantDetailsModal
+        isOpen={Boolean(selectedRestaurantDetails)}
+        onClose={() => setSelectedRestaurantDetails(null)}
+        restaurant={selectedRestaurantDetails}
+      />
 
       {/* Google Map-like Location Picker Modal */}
       <LocationPickerModal
