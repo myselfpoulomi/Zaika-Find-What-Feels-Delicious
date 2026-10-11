@@ -111,9 +111,11 @@ export default function HomePage({
     }
   }
 
-  const toggleSelected = (id) => {
+  const toggleSelected = (restaurant) => {
+    const id = restaurant && typeof restaurant === 'object' ? restaurant.id : restaurant
+    const obj = restaurant && typeof restaurant === 'object' ? restaurant : null
     if (externalOnToggleCompare) {
-      externalOnToggleCompare(id)
+      externalOnToggleCompare(id, obj)
     } else {
       setInternalSelectedForCompare(prev => ({ ...prev, [id]: !prev[id] }))
     }
@@ -352,7 +354,7 @@ export default function HomePage({
                       </button>
 
                       <button
-                        onClick={() => toggleSelected(restaurant.id)}
+                        onClick={() => toggleSelected(restaurant)}
                         className={`flex-1 text-xs font-semibold py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                           isSelected
                             ? 'bg-[#F6EEBE] hover:bg-[#ECE3AD] text-neutral-900'

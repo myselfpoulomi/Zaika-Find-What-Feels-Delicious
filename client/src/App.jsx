@@ -65,10 +65,22 @@ export default function App() {
     }
   })
 
-  const [selectedForCompare, setSelectedForCompare] = useState({
-    1: true,
-    2: true,
-    3: true
+  const [selectedForCompare, setSelectedForCompare] = useState(() => {
+    try {
+      const saved = localStorage.getItem('zaika_selected_for_compare')
+      return saved ? JSON.parse(saved) : { 1: true, 2: true }
+    } catch {
+      return { 1: true, 2: true }
+    }
+  })
+
+  const [customRestaurants, setCustomRestaurants] = useState(() => {
+    try {
+      const saved = localStorage.getItem('zaika_custom_restaurants')
+      return saved ? JSON.parse(saved) : {}
+    } catch {
+      return {}
+    }
   })
 
   const [recentSearches, setRecentSearches] = useState(() => {
@@ -165,8 +177,36 @@ export default function App() {
     })
   }
 
-  const handleToggleCompare = (id) => {
-    setSelectedForCompare((prev) => ({ ...prev, [id]: !prev[id] }))
+  const handleToggleCompare = (id, restaurantObj = null) => {
+    setSelectedForCompare((prev) => {
+      const updated = { ...prev, [id]: !prev[id] }
+      try {
+        localStorage.setItem('zaika_selected_for_compare', JSON.stringify(updated))
+      } catch (e) {
+        console.error(e)
+      }
+      return updated
+    })
+    if (restaurantObj) {
+      setCustomRestaurants((prev) => {
+        const updated = { ...prev, [id]: restaurantObj }
+        try {
+          localStorage.setItem('zaika_custom_restaurants', JSON.stringify(updated))
+        } catch (e) {
+          console.error(e)
+        }
+        return updated
+      })
+    }
+  }
+
+  const handleClearCompare = () => {
+    setSelectedForCompare({})
+    try {
+      localStorage.setItem('zaika_selected_for_compare', JSON.stringify({}))
+    } catch (e) {
+      console.error(e)
+    }
   }
 
   const handleAddRecentSearch = (query) => {
@@ -301,6 +341,7 @@ export default function App() {
         currentPage={currentPage}
         setCurrentPage={navigateTo}
         currentUser={currentUser}
+        compareCount={Object.values(selectedForCompare).filter(Boolean).length}
       />
 
       {/* Main Page Content */}
@@ -364,6 +405,8 @@ export default function App() {
             setCurrentPage={navigateTo}
             selectedForCompare={selectedForCompare}
             onToggleCompare={handleToggleCompare}
+            onClearCompare={handleClearCompare}
+            customRestaurants={customRestaurants}
             favorites={favorites}
             onToggleFavorite={handleToggleFavorite}
           />

@@ -4,7 +4,8 @@ import zaikaLogo from '../assets/zaika.png'
 export default function Navbar({
   currentPage,
   setCurrentPage,
-  currentUser
+  currentUser,
+  compareCount = 0
 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const navRef = useRef(null)
@@ -88,6 +89,7 @@ export default function Navbar({
       id: 'compare',
       label: 'Compare',
       description: 'Analyze menus, pricing, and ratings side-by-side',
+      badge: compareCount > 0 ? compareCount : null,
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -127,13 +129,18 @@ export default function Navbar({
             </button>
             <button
               onClick={() => handleNavigate('compare')}
-              className={`transition-colors cursor-pointer bg-transparent border-0 p-0 text-[15px] font-medium ${
+              className={`transition-colors cursor-pointer bg-transparent border-0 p-0 text-[15px] font-medium flex items-center gap-1.5 ${
                 currentPage === 'compare'
                   ? 'text-[#85312C] font-semibold'
                   : 'text-neutral-700 hover:text-[#85312C]'
               }`}
             >
-              Compare
+              <span>Compare</span>
+              {compareCount > 0 && (
+                <span className="bg-[#FAF1E8] text-[#85312C] text-[11px] font-bold px-1.5 py-0.2 rounded-full border border-[#F3E2D4]">
+                  {compareCount}
+                </span>
+              )}
             </button>
             <button
               onClick={() => handleNavigate('favorites')}
@@ -258,7 +265,14 @@ export default function Navbar({
                       {item.icon}
                     </span>
                     <div>
-                      <div className="text-[15px] font-medium leading-snug">{item.label}</div>
+                      <div className="text-[15px] font-medium leading-snug flex items-center gap-2">
+                        <span>{item.label}</span>
+                        {item.badge && (
+                          <span className="bg-[#FAF1E8] text-[#85312C] text-[10px] font-bold px-1.5 py-0.2 rounded-full border border-[#F3E2D4]">
+                            {item.badge}
+                          </span>
+                        )}
+                      </div>
                       <div className="text-[12px] text-neutral-500 font-normal leading-tight">
                         {item.description}
                       </div>

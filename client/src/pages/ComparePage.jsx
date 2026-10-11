@@ -1,10 +1,61 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { ALL_RESTAURANTS } from '../data/restaurants'
+
+// Helper function to ensure restaurant has a curated menu (for live places)
+function ensureRestaurantMenu(restaurant) {
+  if (restaurant.menu && restaurant.menu.length > 0) return restaurant
+
+  const isVeg = restaurant.isVeg
+  const cuisineType = restaurant.cuisineType || 'Continental'
+  let sampleMenu = []
+
+  if (cuisineType === 'Indian') {
+    sampleMenu = [
+      { name: isVeg ? 'Saffron Paneer Tikka' : 'Tandoori Chicken Tikka', price: '₹280', priceNum: 280, category: 'starter', desc: 'Charcoal grilled kebabs with mint chutney' },
+      { name: isVeg ? 'Dal Makhani Slow Simmered' : 'Butter Chicken Royale', price: '₹320', priceNum: 320, category: 'main', desc: 'Slow simmered rich aromatic gravy' },
+      { name: 'Butter Garlic Naan (2 pcs)', price: '₹90', priceNum: 90, category: 'bread', desc: 'Fresh tandoor-baked flatbread' },
+      { name: 'Saffron Cardamom Lassi', price: '₹140', priceNum: 140, category: 'drink', desc: 'Chilled creamy yogurt beverage' },
+      { name: 'Gulab Jamun with Rabri', price: '₹130', priceNum: 130, category: 'dessert', desc: 'Warm milk dumplings soaked in syrup' }
+    ]
+  } else if (cuisineType === 'Italian') {
+    sampleMenu = [
+      { name: 'Classic Margherita Pizza', price: '₹340', priceNum: 340, category: 'main', desc: 'San Marzano tomatoes, fresh mozzarella, basil' },
+      { name: 'Handmade Fettuccine Alfredo', price: '₹310', priceNum: 310, category: 'main', desc: 'Creamy parmesan emulsion with cracked black pepper' },
+      { name: 'Herbed Garlic Bread', price: '₹140', priceNum: 140, category: 'starter', desc: 'Toasted sourdough with roasted garlic butter' },
+      { name: 'Signature Aperol Spritz', price: '₹290', priceNum: 290, category: 'drink', desc: 'Sparkling citrus refresher' },
+      { name: 'Tiramisu Tradizionale', price: '₹190', priceNum: 190, category: 'dessert', desc: 'Espresso savoiardi with mascarpone' }
+    ]
+  } else if (cuisineType === 'Café') {
+    sampleMenu = [
+      { name: 'Artisan Avocado Sourdough', price: '₹240', priceNum: 240, category: 'main', desc: 'Hass avocado on toasted artisan sourdough' },
+      { name: 'Specialty Rosetta Cappuccino', price: '₹160', priceNum: 160, category: 'drink', desc: 'Single-origin espresso with steamed milk' },
+      { name: 'Butter Croissant Flaky', price: '₹120', priceNum: 120, category: 'starter', desc: 'Freshly baked golden layered pastry' },
+      { name: 'Granola & Berry Parfait', price: '₹180', priceNum: 180, category: 'dessert', desc: 'Greek yogurt with toasted almonds and berries' }
+    ]
+  } else {
+    sampleMenu = [
+      { name: 'Signature Chef Special Plate', price: '₹320', priceNum: 320, category: 'main', desc: 'Signature preparation with seasonal sides' },
+      { name: 'Crisp Appetizer Platter', price: '₹220', priceNum: 220, category: 'starter', desc: 'Golden roasted specialty bites' },
+      { name: 'House Cooler Refresher', price: '₹150', priceNum: 150, category: 'drink', desc: 'Fresh fruit infused sparkling cooler' },
+      { name: 'Dessert of the Day', price: '₹160', priceNum: 160, category: 'dessert', desc: 'Chef confection served chilled' }
+    ]
+  }
+
+  return {
+    ...restaurant,
+    signatureDish: restaurant.signatureDish || sampleMenu[0]?.name || 'Chef Special',
+    offer: restaurant.offer || 'Up to ₹50 off',
+    offerAmount: restaurant.offerAmount || 50,
+    menu: sampleMenu
+  }
+}
 
 export default function ComparePage({
   setCurrentPage,
   selectedForCompare = {},
   onToggleCompare,
+  onClearCompare,
+  customRestaurants = {},
   favorites = {},
   onToggleFavorite
 }) {
@@ -20,13 +71,40 @@ export default function ComparePage({
   const [craving, setCraving] = useState('')
   const [anythingElse, setAnythingElse] = useState('Something filling, not too expensive.')
 
-  // Local selection of restaurant IDs for comparison (seeded from app-level selectedForCompare)
-  const [selectedIds, setSelectedIds] = useState(() => {
-    const ids = Object.keys(selectedForCompare)
+  // Combine ALL_RESTAURANTS with any customRestaurants from Discover
+  const allAvailableRestaurants = useMemo(() => {
+    const map = new Map()
+    ALL_RESTAURANTS.forEach((r) => map.set(String(r.id), r))
+    if (customRestaurants && typeof customRestaurants === 'object') {
+      Object.values(customRestaurants).forEach((cr) => {
+        if (cr && cr.id) {
+          map.set(String(cr.id), ensureRestaurantMenu(cr))
+        }
+      })
+    }
+    return Array.from(map.values())
+  }, [customRestaurants])
+
+  // Get active IDs chosen by user from app-level selectedForCompare
+  const activeSelectedIds = useMemo(() => {
+    return Object.keys(selectedForCompare)
       .filter((id) => selectedForCompare[id])
-      .map(Number)
-    return ids.length >= 2 ? ids.slice(0, 4) : [1, 2]
-  })
+      .map((id) => (isNaN(Number(id)) ? id : Number(id)))
+  }, [selectedForCompare])
+
+  // Synchronized selected IDs state
+  const [selectedIds, setSelectedIds] = useState(activeSelectedIds)
+
+  useEffect(() => {
+    setSelectedIds(activeSelectedIds)
+  }, [activeSelectedIds])
+
+  // Exact list of restaurants chosen by user
+  const chosenRestaurants = useMemo(() => {
+    return allAvailableRestaurants.filter((r) =>
+      selectedIds.some((id) => String(id) === String(r.id))
+    )
+  }, [allAvailableRestaurants, selectedIds])
 
   // Active full menu modal
   const [activeMenuModal, setActiveMenuModal] = useState(null)
@@ -78,10 +156,12 @@ export default function ComparePage({
     }
   }
 
-  // Toggle restaurant selection in Step 2
-  const toggleRestaurant = (id) => {
-    if (selectedIds.includes(id)) {
-      setSelectedIds((prev) => prev.filter((item) => item !== id))
+  // Toggle restaurant selection
+  const toggleRestaurant = (id, restaurantObj = null) => {
+    const isCurrentlySelected = selectedIds.some((item) => String(item) === String(id))
+
+    if (isCurrentlySelected) {
+      setSelectedIds((prev) => prev.filter((item) => String(item) !== String(id)))
     } else {
       if (selectedIds.length >= 4) {
         alert('You can compare up to 4 restaurants side-by-side.')
@@ -90,13 +170,38 @@ export default function ComparePage({
       setSelectedIds((prev) => [...prev, id])
     }
     if (onToggleCompare) {
-      onToggleCompare(id)
+      const obj = restaurantObj || allAvailableRestaurants.find((r) => String(r.id) === String(id))
+      onToggleCompare(id, obj)
     }
   }
 
-  // AI Matching & Compatibility Scoring for each restaurant (focusing on budget, cuisine, dietary, drinks, and food cravings)
+  // Clear all selected restaurants
+  const handleClearAll = () => {
+    setSelectedIds([])
+    if (onClearCompare) {
+      onClearCompare()
+    }
+  }
+
+  // Quick 1-click popular comparison pairing
+  const handleQuickPair = (id1, id2) => {
+    const r1 = allAvailableRestaurants.find((r) => String(r.id) === String(id1))
+    const r2 = allAvailableRestaurants.find((r) => String(r.id) === String(id2))
+    setSelectedIds([id1, id2])
+    if (onClearCompare) {
+      onClearCompare()
+    }
+    if (onToggleCompare) {
+      setTimeout(() => {
+        onToggleCompare(id1, r1)
+        onToggleCompare(id2, r2)
+      }, 10)
+    }
+  }
+
+  // AI Matching & Compatibility Scoring for each restaurant
   const scoredRestaurants = useMemo(() => {
-    return ALL_RESTAURANTS.map((restaurant) => {
+    return allAvailableRestaurants.map((restaurant) => {
       let score = 75 // Base score
 
       // Cuisine match
@@ -165,7 +270,9 @@ export default function ComparePage({
 
   // Restaurants selected for side-by-side comparison
   const compareList = useMemo(() => {
-    return scoredRestaurants.filter((r) => selectedIds.includes(r.id))
+    return scoredRestaurants.filter((r) =>
+      selectedIds.some((id) => String(id) === String(r.id))
+    )
   }, [scoredRestaurants, selectedIds])
 
   // AI-Curated Meal Plan for each selected restaurant based on budget and preferences
@@ -716,7 +823,7 @@ export default function ComparePage({
 
             {/* Filter Tabs */}
             <div className="flex items-center gap-2 overflow-x-auto pb-1">
-              {['All', 'Italian', 'Indian', 'Café', 'Favorites'].map((filterName) => (
+              {['All', 'Chosen by you', 'Italian', 'Indian', 'Café', 'Favorites'].map((filterName) => (
                 <button
                   key={filterName}
                   onClick={() => setPlaceFilter(filterName)}
@@ -726,7 +833,9 @@ export default function ComparePage({
                       : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
                   }`}
                 >
-                  {filterName === 'Favorites'
+                  {filterName === 'Chosen by you'
+                    ? `★ Chosen by you (${chosenRestaurants.length})`
+                    : filterName === 'Favorites'
                     ? `Favorites (${Object.values(favorites).filter(Boolean).length})`
                     : filterName}
                 </button>
@@ -737,6 +846,9 @@ export default function ComparePage({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {scoredRestaurants
                 .filter((r) => {
+                  if (placeFilter === 'Chosen by you') {
+                    return selectedIds.some((id) => String(id) === String(r.id))
+                  }
                   if (placeFilter === 'Italian') return r.cuisineType === 'Italian'
                   if (placeFilter === 'Indian') return r.cuisineType === 'Indian'
                   if (placeFilter === 'Café') return r.cuisineType === 'Café'
@@ -744,7 +856,7 @@ export default function ComparePage({
                   return true
                 })
                 .map((restaurant) => {
-                  const isSelected = selectedIds.includes(restaurant.id)
+                  const isSelected = selectedIds.some((id) => String(id) === String(restaurant.id))
 
                   return (
                     <div
@@ -768,6 +880,13 @@ export default function ComparePage({
                           <span>✨</span>
                           <span>{restaurant.aiScore}% Match</span>
                         </div>
+
+                        {/* Chosen by you badge */}
+                        {isSelected && (
+                          <div className="absolute top-3 right-12 bg-[#85312C] text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-xs">
+                            ✓ Chosen
+                          </div>
+                        )}
 
                         {/* Favorite button */}
                         <button
@@ -905,10 +1024,10 @@ export default function ComparePage({
                   03 / COMPARE MENUS & AI BREAKDOWN
                 </span>
                 <h2 className="font-serif text-3xl sm:text-4xl text-neutral-900 font-normal leading-tight">
-                  Side-by-side menu & real bill comparison
+                  Side-by-side comparison of your chosen places
                 </h2>
                 <p className="text-neutral-500 text-sm sm:text-base mt-1.5">
-                  Customized orders curated by Zaika AI for {people} {people === 1 ? 'person' : 'people'} within your ₹{budget} budget.
+                  Comparing: <strong className="text-neutral-800 font-semibold">{chosenRestaurants.map((c) => c.name).join(' vs ')}</strong> for {people} {people === 1 ? 'person' : 'people'} within your ₹{budget} budget.
                 </p>
               </div>
 
@@ -1022,12 +1141,22 @@ export default function ComparePage({
                       {/* Name & Metadata */}
                       <div>
                         <div className="flex items-baseline justify-between gap-1 mb-1">
-                          <h4 className="font-serif text-xl font-normal text-neutral-900">
+                          <h4 className="font-serif text-xl font-normal text-neutral-900 line-clamp-1">
                             {restaurant.name}
                           </h4>
-                          <span className="text-xs font-bold text-[#85312C]">
-                            {restaurant.aiScore}% Match
-                          </span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-xs font-bold text-[#85312C]">
+                              {restaurant.aiScore}% Match
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => toggleRestaurant(restaurant.id)}
+                              className="w-5 h-5 rounded-full hover:bg-rose-50 text-neutral-400 hover:text-rose-600 flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
+                              title={`Remove ${restaurant.name} from comparison`}
+                            >
+                              ✕
+                            </button>
+                          </div>
                         </div>
 
                         <p className="text-xs text-neutral-500 mb-3">
@@ -1157,6 +1286,31 @@ export default function ComparePage({
                   </div>
                 )
               })}
+
+              {/* Optional Add Place Card Slot in Step 3 */}
+              {compareList.length < 4 && (
+                <div className="rounded-2xl border-2 border-dashed border-neutral-300 hover:border-[#85312C] bg-white/70 p-6 flex flex-col items-center justify-center text-center transition-all min-h-[400px]">
+                  <div className="w-12 h-12 rounded-full bg-[#FAF1E8] text-[#85312C] flex items-center justify-center text-2xl font-light mb-3">
+                    +
+                  </div>
+                  <h4 className="font-serif text-xl font-normal text-neutral-900">
+                    Add another place
+                  </h4>
+                  <p className="text-xs text-neutral-500 mt-1 max-w-xs">
+                    Compare up to 4 restaurants side-by-side to find the best flavors and prices.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCurrentStep(2)
+                      window.scrollTo({ top: 300, behavior: 'smooth' })
+                    }}
+                    className="mt-4 bg-[#85312C] hover:bg-[#702622] text-white text-xs font-semibold py-2 px-4 rounded-xl shadow-xs transition-colors cursor-pointer"
+                  >
+                    Pick Restaurant →
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Bottom Actions */}
