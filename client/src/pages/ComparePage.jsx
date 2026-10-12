@@ -9,10 +9,28 @@ export default function ComparePage({
   onClearCompare,
   customRestaurants = {},
   favorites = {},
-  onToggleFavorite
+  onToggleFavorite,
+  discoveredRestaurants = [],
+  onUpdateDiscoveredRestaurants
 }) {
-  // Step in the compare wizard: 1 = Your plans, 2 = Pick places, 3 = Compare menus
-  const [currentStep, setCurrentStep] = useState(1)
+  // Step in the compare wizard: 1 = Your plans, 2 = Pick places (redirects to Discover), 3 = Compare menus
+  const [currentStep, setCurrentStep] = useState(() => {
+    try {
+      const active = Object.values(selectedForCompare || {}).filter(Boolean).length
+      return active >= 2 ? 3 : 1
+    } catch {
+      return 1
+    }
+  })
+
+  // If user is on Step 2 (Pick places), redirect directly to Discover page
+  useEffect(() => {
+    if (currentStep === 2) {
+      if (setCurrentPage) {
+        setCurrentPage('discover')
+      }
+    }
+  }, [currentStep, setCurrentPage])
 
   // Step 1: User plan inputs
   const [budget, setBudget] = useState(1500)
@@ -24,23 +42,68 @@ export default function ComparePage({
   const [anythingElse, setAnythingElse] = useState('Something filling, not too expensive.')
   const [viewingMenuRestaurant, setViewingMenuRestaurant] = useState(null)
 
-  // Live restaurants from Google Places API
-  const [apiRestaurants, setApiRestaurants] = useState([])
-  const [isLoadingPlaces, setIsLoadingPlaces] = useState(true)
+  // Live restaurants from Discover page / Google Places API
+  const [apiRestaurants, setApiRestaurants] = useState(() => {
+    if (Array.isArray(discoveredRestaurants) && discoveredRestaurants.length > 0) {
+      return discoveredRestaurants
+    }
+    try {
+      const saved = localStorage.getItem('zaika_discovered_restaurants')
+      return saved ? JSON.parse(saved) : []
+    } catch {
+      return []
+    }
+  })
+  const [isLoadingPlaces, setIsLoadingPlaces] = useState(() => {
+    const hasProps = Array.isArray(discoveredRestaurants) && discoveredRestaurants.length > 0
+    let hasLocal = false
+    try {
+      const saved = localStorage.getItem('zaika_discovered_restaurants')
+      if (saved && JSON.parse(saved).length > 0) hasLocal = true
+    } catch {
+      hasLocal = false
+    }
+    return !hasProps && !hasLocal
+  })
 
   useEffect(() => {
+    if (Array.isArray(discoveredRestaurants) && discoveredRestaurants.length > 0) {
+      setApiRestaurants(discoveredRestaurants)
+      setIsLoadingPlaces(false)
+      return
+    }
+
     let isMounted = true
     async function loadPlaces() {
+      // Get location from localStorage (same as DiscoverPage)
+      let targetLoc = { lat: 12.9716, lng: 77.5946, city: 'Bengaluru' }
+      try {
+        const savedLoc = localStorage.getItem('zaika_selected_location')
+        if (savedLoc) {
+          const parsed = JSON.parse(savedLoc)
+          targetLoc = {
+            lat: parsed.lat || 12.9716,
+            lng: parsed.lon || parsed.lng || 77.5946,
+            city: parsed.city || 'Bengaluru'
+          }
+        }
+      } catch (e) {
+        console.warn(e)
+      }
+
       setIsLoadingPlaces(true)
       try {
         const places = await fetchLiveRestaurants({
-          lat: 12.9716,
-          lng: 77.5946,
+          lat: targetLoc.lat,
+          lng: targetLoc.lng,
           radius: 5000,
-          city: 'Bengaluru'
+          city: targetLoc.city
         })
         if (isMounted) {
           setApiRestaurants(places)
+          if (onUpdateDiscoveredRestaurants) {
+            onUpdateDiscoveredRestaurants(places)
+          }
         }
       } catch (e) {
         console.warn('Error loading live places for ComparePage:', e)
@@ -50,16 +113,26 @@ export default function ComparePage({
         }
       }
     }
+
     loadPlaces()
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [discoveredRestaurants, onUpdateDiscoveredRestaurants])
 
   // Combine live API restaurants with any customRestaurants selected by user
   const allAvailableRestaurants = useMemo(() => {
     const map = new Map()
-    apiRestaurants.forEach((r) => map.set(String(r.id), r))
+    const pool = (Array.isArray(discoveredRestaurants) && discoveredRestaurants.length > 0)
+      ? discoveredRestaurants
+      : apiRestaurants
+
+    pool.forEach((r) => {
+      if (r && r.id) {
+        map.set(String(r.id), ensureRestaurantMenu(r))
+      }
+    })
+
     if (customRestaurants && typeof customRestaurants === 'object') {
       Object.values(customRestaurants).forEach((cr) => {
         if (cr && cr.id) {
@@ -68,7 +141,7 @@ export default function ComparePage({
       })
     }
     return Array.from(map.values())
-  }, [apiRestaurants, customRestaurants])
+  }, [discoveredRestaurants, apiRestaurants, customRestaurants])
 
   // Get active IDs chosen by user from app-level selectedForCompare
   const activeSelectedIds = useMemo(() => {
@@ -83,21 +156,6 @@ export default function ComparePage({
   useEffect(() => {
     setSelectedIds(activeSelectedIds)
   }, [activeSelectedIds])
-
-  // If no restaurants are selected yet and live API restaurants have loaded, default to the first 2 live places
-  useEffect(() => {
-    if (
-      allAvailableRestaurants.length >= 2 &&
-      (selectedIds.length === 0 || !allAvailableRestaurants.some(r => selectedIds.includes(r.id)))
-    ) {
-      const firstTwo = [allAvailableRestaurants[0].id, allAvailableRestaurants[1].id]
-      setSelectedIds(firstTwo)
-      if (onToggleCompare) {
-        onToggleCompare(allAvailableRestaurants[0].id, allAvailableRestaurants[0])
-        onToggleCompare(allAvailableRestaurants[1].id, allAvailableRestaurants[1])
-      }
-    }
-  }, [allAvailableRestaurants])
 
   // Exact list of restaurants chosen by user
   const chosenRestaurants = useMemo(() => {
@@ -441,28 +499,24 @@ export default function ComparePage({
 
             <span className="text-neutral-400 font-light">&gt;</span>
 
-            {/* Step 2 */}
+            {/* Step 2 (Pick places in Discover) */}
             <button
-              onClick={() => setCurrentStep(2)}
+              onClick={() => setCurrentPage && setCurrentPage('discover')}
               className="flex items-center gap-2.5 transition-colors cursor-pointer group"
+              title="Pick places on Discover page"
             >
               <span
                 className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
-                  currentStep === 2
-                    ? 'bg-[#85312C] text-white shadow-xs'
-                    : currentStep > 2
+                  selectedIds.length >= 2
                     ? 'bg-neutral-800 text-white'
                     : 'border border-neutral-300 text-neutral-500 bg-white'
                 }`}
               >
                 2
               </span>
-              <span
-                className={`font-semibold ${
-                  currentStep === 2 ? 'text-[#85312C]' : 'text-neutral-700 hover:text-neutral-900'
-                }`}
-              >
-                Pick places
+              <span className="font-semibold text-neutral-700 group-hover:text-neutral-900 flex items-center gap-1">
+                <span>Pick places</span>
+                <span className="text-[11px] text-[#85312C] font-normal">(Discover ↗)</span>
               </span>
               {selectedIds.length > 0 && (
                 <span className="bg-[#FAF1E8] text-[#85312C] text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-[#F3E2D4]">
@@ -749,7 +803,16 @@ export default function ComparePage({
                 <span>Zaika AI will curate your side-by-side dishes within your ₹{budget} budget.</span>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage && setCurrentPage('discover')}
+                  className="border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-sm font-semibold py-2.5 px-4 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <span>+ Add Places from Discover</span>
+                  <span>→</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => {
@@ -770,12 +833,11 @@ export default function ComparePage({
                 <button
                   type="button"
                   onClick={() => {
-                    setCurrentStep(2)
-                    window.scrollTo({ top: 0, behavior: 'smooth' })
+                    if (setCurrentPage) setCurrentPage('discover')
                   }}
                   className="bg-[#85312C] hover:bg-[#702622] text-white text-sm font-semibold py-2.5 px-6 rounded-lg shadow-sm transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 group"
                 >
-                  <span>Find my options</span>
+                  <span>Pick places in Discover ({selectedIds.length})</span>
                   <span className="text-base leading-none transition-transform group-hover:translate-x-0.5">
                     →
                   </span>
@@ -786,260 +848,32 @@ export default function ComparePage({
         )}
 
         {/* ============================================================ */}
-        {/* STEP 2: PICK PLACES (Choose 2 or more restaurants) */}
+        {/* STEP 2: REDIRECT TO DISCOVER PAGE */}
         {/* ============================================================ */}
         {currentStep === 2 && (
-          <div className="space-y-8 animate-fade-in">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-              <div>
-                <span className="text-[11px] font-bold tracking-[0.2em] text-[#85312C] uppercase block mb-1">
-                  02 / PICK PLACES
-                </span>
-                <h2 className="font-serif text-3xl sm:text-4xl text-neutral-900 font-normal leading-tight">
-                  Choose restaurants to compare
-                </h2>
-                <p className="text-neutral-500 text-sm sm:text-base mt-1.5">
-                  Pick 2 to 4 places. We’ve ranked them based on your ₹{budget} budget for {people}{' '}
-                  {people === 1 ? 'person' : 'people'} and your taste preferences.
-                </p>
-              </div>
-
-              {/* Selection Counter Badge & Discover Link */}
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage && setCurrentPage('discover')}
-                  className="text-xs text-[#85312C] hover:underline font-medium cursor-pointer hidden sm:inline"
-                >
-                  Explore more in Discover →
-                </button>
-                <span className="text-xs sm:text-sm font-medium text-neutral-700 bg-white border border-neutral-200 px-3 py-1.5 rounded-lg shadow-2xs">
-                  <strong className="text-[#85312C] font-bold">{selectedIds.length}</strong> of 4 places selected{' '}
-                  <span className="text-neutral-400">({selectedIds.length >= 2 ? 'Ready' : 'Min 2 required'})</span>
-                </span>
-              </div>
+          <div className="bg-white rounded-2xl border border-neutral-200 p-10 sm:p-14 text-center my-6 space-y-4 max-w-lg mx-auto shadow-xs animate-fade-in">
+            <div className="w-14 h-14 rounded-full bg-[#FAF1E8] text-[#85312C] flex items-center justify-center mx-auto text-2xl animate-pulse shadow-xs">
+              📍
             </div>
-
-            {/* Filter Tabs */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1">
-              {['All', 'Chosen by you', 'Italian', 'Indian', 'Café', 'Favorites'].map((filterName) => (
-                <button
-                  key={filterName}
-                  onClick={() => setPlaceFilter(filterName)}
-                  className={`text-xs px-3.5 py-1.5 rounded-full border transition-colors cursor-pointer shrink-0 font-medium ${
-                    placeFilter === filterName
-                      ? 'bg-[#85312C] text-white border-[#85312C]'
-                      : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
-                  }`}
-                >
-                  {filterName === 'Chosen by you'
-                    ? `★ Chosen by you (${chosenRestaurants.length})`
-                    : filterName === 'Favorites'
-                    ? `Favorites (${Object.values(favorites).filter(Boolean).length})`
-                    : filterName}
-                </button>
-              ))}
-            </div>
-
-            {/* Restaurant Cards Grid */}
-            {isLoadingPlaces ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 my-6">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="bg-white rounded-2xl border border-neutral-200 overflow-hidden p-4 space-y-3 animate-pulse">
-                    <div className="aspect-[16/10] bg-neutral-200 rounded-xl w-full" />
-                    <div className="h-5 bg-neutral-200 rounded w-2/3" />
-                    <div className="h-3 bg-neutral-200 rounded w-1/3" />
-                    <div className="h-4 bg-neutral-200 rounded w-full" />
-                  </div>
-                ))}
-              </div>
-            ) : scoredRestaurants.length === 0 ? (
-              <div className="py-16 text-center bg-white rounded-2xl border border-neutral-200 my-6">
-                <p className="text-neutral-700 font-medium">No live restaurants available for comparison.</p>
-                <p className="text-xs text-neutral-400 mt-1">Please ensure the server is running and GOOGLE_MAPS_API_KEY is active.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {scoredRestaurants
-                  .filter((r) => {
-                    if (placeFilter === 'Chosen by you') {
-                      return selectedIds.some((id) => String(id) === String(r.id))
-                    }
-                    if (placeFilter === 'Italian') return r.cuisineType === 'Italian'
-                    if (placeFilter === 'Indian') return r.cuisineType === 'Indian'
-                    if (placeFilter === 'Café') return r.cuisineType === 'Café' || r.category === 'Café'
-                    if (placeFilter === 'Favorites') return favorites[r.id]
-                    return true
-                  })
-                .map((restaurant) => {
-                  const isSelected = selectedIds.some((id) => String(id) === String(restaurant.id))
-
-                  return (
-                    <div
-                      key={restaurant.id}
-                      className={`bg-white rounded-2xl border overflow-hidden shadow-xs transition-all duration-300 flex flex-col group relative ${
-                        isSelected
-                          ? 'border-[#85312C] ring-2 ring-[#85312C]/20 shadow-md'
-                          : 'border-neutral-200/80 hover:border-neutral-300 hover:shadow-md'
-                      }`}
-                    >
-                      {/* Image Container with Badges */}
-                      <div className="relative aspect-[16/10] w-full overflow-hidden bg-neutral-100">
-                        <img
-                          src={restaurant.image}
-                          alt={restaurant.name}
-                          className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
-                        />
-
-                        {/* AI Match Badge */}
-                        <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-xs text-[#85312C] text-[11px] font-bold px-2.5 py-1 rounded-md shadow-xs border border-neutral-100 flex items-center gap-1">
-                          <span>✨</span>
-                          <span>{restaurant.aiScore}% Match</span>
-                        </div>
-
-                        {/* Chosen by you badge */}
-                        {isSelected && (
-                          <div className="absolute top-3 right-12 bg-[#85312C] text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-xs">
-                            ✓ Chosen
-                          </div>
-                        )}
-
-                        {/* Favorite button */}
-                        <button
-                          type="button"
-                          onClick={() => onToggleFavorite && onToggleFavorite(restaurant.id)}
-                          className={`absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-xs flex items-center justify-center shadow-xs transition-transform hover:scale-105 cursor-pointer ${
-                            favorites[restaurant.id] ? 'text-rose-500' : 'text-neutral-400 hover:text-neutral-600'
-                          }`}
-                        >
-                          <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                            <path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-                          </svg>
-                        </button>
-
-                        {/* Offer Badge */}
-                        <div className="absolute bottom-3 left-3 bg-[#FAF1E8] text-[#85312C] text-xs font-semibold px-2.5 py-1 rounded-md shadow-xs border border-[#F3E2D4]">
-                          {restaurant.offer}
-                        </div>
-                      </div>
-
-                      {/* Content */}
-                      <div className="p-5 flex-1 flex flex-col justify-between">
-                        <div>
-                          <div className="flex items-center justify-between gap-2">
-                            <h3 className="font-serif text-xl text-neutral-900 font-normal">
-                              {restaurant.name}
-                            </h3>
-                            <div className="flex items-center gap-1 text-sm font-semibold text-neutral-800">
-                              <span className="text-amber-500">★</span>
-                              <span>{restaurant.rating}</span>
-                            </div>
-                          </div>
-
-                          <p className="text-xs text-neutral-500 mt-0.5">{restaurant.cuisine}</p>
-
-                          <p className="text-neutral-600 text-xs sm:text-sm mt-2.5 line-clamp-2 leading-relaxed">
-                            {restaurant.description}
-                          </p>
-
-                          {/* Signature Dish Highlight */}
-                          <div className="mt-3 bg-[#FAF8F5] p-2 rounded-lg border border-neutral-100 flex items-start gap-1.5 text-xs text-neutral-700">
-                            <span className="text-[#85312C] text-xs">🍽️</span>
-                            <span className="line-clamp-1 text-[11px]">
-                              Signature: <strong className="font-semibold text-neutral-900">{restaurant.signatureDish}</strong>
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Action row */}
-                        <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-between gap-2">
-                          <div className="text-xs text-neutral-500">
-                            <span>{restaurant.distance}</span> · <span>{restaurant.price}</span>
-                          </div>
-
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => setViewingMenuRestaurant(restaurant)}
-                              className="text-xs font-medium py-1.5 px-2.5 rounded-lg border border-neutral-200 hover:bg-neutral-50 text-neutral-700 transition-colors cursor-pointer"
-                              title="View full menu"
-                            >
-                              Menu ↗
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => toggleRestaurant(restaurant.id)}
-                              className={`text-xs font-semibold py-1.5 px-3 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
-                                isSelected
-                                  ? 'bg-[#F6EEBE] text-neutral-900 font-bold hover:bg-[#ECE3AD]'
-                                  : 'bg-[#85312C] hover:bg-[#702622] text-white shadow-xs'
-                              }`}
-                            >
-                              {isSelected ? (
-                                <>
-                                  <span>✓</span>
-                                  <span>Selected</span>
-                                </>
-                              ) : (
-                                <>
-                                  <span>+</span>
-                                  <span>Compare</span>
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-
-            {/* Bottom Floating Bar */}
-            <div className="sticky bottom-4 z-30 bg-neutral-900 text-white rounded-2xl p-4 shadow-xl border border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(1)}
-                  className="text-neutral-400 hover:text-white text-xs font-medium cursor-pointer"
-                >
-                  ← Back to plans
-                </button>
-                <div className="h-4 w-px bg-neutral-700 hidden sm:block" />
-                <span className="text-xs font-medium text-neutral-300">
-                  {selectedIds.length === 0 && 'Select 2 or more restaurants to compare.'}
-                  {selectedIds.length === 1 && 'Pick 1 more restaurant to enable comparison.'}
-                  {selectedIds.length >= 2 && (
-                    <span>
-                      Comparing <strong className="text-[#F6EEBE] font-bold">{selectedIds.length}</strong> restaurants
-                      for ₹{budget} budget
-                    </span>
-                  )}
-                </span>
-              </div>
-
+            <h2 className="font-serif text-3xl text-neutral-900 font-normal">
+              Redirecting to Discover...
+            </h2>
+            <p className="text-sm text-neutral-600 leading-relaxed">
+              Explore and choose your favorite cafes and restaurants directly on the Discover page.
+            </p>
+            <div className="pt-2">
               <button
                 type="button"
-                disabled={selectedIds.length < 2}
-                onClick={() => {
-                  setCurrentStep(3)
-                  window.scrollTo({ top: 0, behavior: 'smooth' })
-                }}
-                className={`text-sm font-semibold px-6 py-2.5 rounded-xl flex items-center gap-2 transition-all cursor-pointer ${
-                  selectedIds.length >= 2
-                    ? 'bg-[#85312C] hover:bg-[#9B3831] text-white shadow-md'
-                    : 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
-                }`}
+                onClick={() => setCurrentPage && setCurrentPage('discover')}
+                className="bg-[#85312C] hover:bg-[#702622] text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-xs transition-all cursor-pointer inline-flex items-center gap-2"
               >
-                <span>Compare menus with Zaika AI</span>
-                <span className="text-base leading-none">✨ →</span>
+                <span>Go to Discover Page</span>
+                <span>→</span>
               </button>
             </div>
           </div>
         )}
+
 
         {/* ============================================================ */}
         {/* STEP 3: COMPARE MENUS & AI BREAKDOWN */}
@@ -1060,13 +894,21 @@ export default function ComparePage({
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setCurrentStep(2)}
+                  onClick={() => setCurrentPage && setCurrentPage('discover')}
+                  className="bg-[#85312C] hover:bg-[#702622] text-white text-xs font-semibold py-2 px-3.5 rounded-lg shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <span>+ Add Restaurant from Discover</span>
+                  <span>→</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage && setCurrentPage('discover')}
                   className="border border-neutral-300 hover:bg-neutral-100 bg-white text-neutral-800 text-xs font-semibold py-2 px-3 rounded-lg transition-colors cursor-pointer"
                 >
-                  Edit places ({selectedIds.length})
+                  Edit places in Discover ({selectedIds.length})
                 </button>
                 <button
                   type="button"
@@ -1078,8 +920,39 @@ export default function ComparePage({
               </div>
             </div>
 
+            {/* If fewer than 2 places selected in Step 3 */}
+            {compareList.length < 2 && (
+              <div className="bg-white rounded-2xl border border-neutral-200 p-8 sm:p-12 text-center my-6 space-y-4 max-w-lg mx-auto shadow-xs">
+                <div className="w-16 h-16 rounded-full bg-[#FAF1E8] text-[#85312C] flex items-center justify-center mx-auto text-3xl shadow-xs">
+                  🍽️
+                </div>
+                <h3 className="font-serif text-2xl sm:text-3xl text-neutral-900 font-normal">
+                  Select at least 2 places to compare
+                </h3>
+                <p className="text-sm text-neutral-500 leading-relaxed">
+                  To view the side-by-side menu comparison and AI bill breakdown, please select 2 or more restaurants from your Discover page.
+                </p>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage && setCurrentPage('discover')}
+                    className="w-full sm:w-auto bg-[#85312C] hover:bg-[#702622] text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer"
+                  >
+                    + Browse & Add from Discover →
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(1)}
+                    className="w-full sm:w-auto border border-neutral-300 hover:bg-neutral-50 text-neutral-800 text-sm font-medium px-5 py-2.5 rounded-xl transition-colors cursor-pointer"
+                  >
+                    Edit Plans (Step 1)
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* AI CONCIERGE VERDICT BANNER */}
-            {aiWinner && (
+            {compareList.length >= 2 && aiWinner && (
               <div className="bg-gradient-to-r from-[#FAF1E8] via-[#FAF5EA] to-[#F7EEDE] rounded-2xl border border-[#F0DFD0] p-6 shadow-xs">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                   <div className="space-y-2">
@@ -1306,25 +1179,28 @@ export default function ComparePage({
 
               {/* Optional Add Place Card Slot in Step 3 */}
               {compareList.length < 4 && (
-                <div className="rounded-2xl border-2 border-dashed border-neutral-300 hover:border-[#85312C] bg-white/70 p-6 flex flex-col items-center justify-center text-center transition-all min-h-[400px]">
-                  <div className="w-12 h-12 rounded-full bg-[#FAF1E8] text-[#85312C] flex items-center justify-center text-2xl font-light mb-3">
+                <div
+                  onClick={() => setCurrentPage && setCurrentPage('discover')}
+                  className="rounded-2xl border-2 border-dashed border-neutral-300 hover:border-[#85312C] bg-white/70 hover:bg-white p-6 flex flex-col items-center justify-center text-center transition-all min-h-[400px] cursor-pointer group"
+                >
+                  <div className="w-12 h-12 rounded-full bg-[#FAF1E8] text-[#85312C] group-hover:bg-[#85312C] group-hover:text-white transition-all flex items-center justify-center text-2xl font-light mb-3 shadow-xs">
                     +
                   </div>
-                  <h4 className="font-serif text-xl font-normal text-neutral-900">
-                    Add another place
+                  <h4 className="font-serif text-xl font-normal text-neutral-900 group-hover:text-[#85312C] transition-colors">
+                    Add another place from Discover
                   </h4>
-                  <p className="text-xs text-neutral-500 mt-1 max-w-xs">
-                    Compare up to 4 restaurants side-by-side to find the best flavors and prices.
+                  <p className="text-xs text-neutral-500 mt-1 max-w-xs leading-relaxed">
+                    Compare up to 4 restaurants side-by-side. Browse places on the Discover page and add them to compare.
                   </p>
                   <button
                     type="button"
-                    onClick={() => {
-                      setCurrentStep(2)
-                      window.scrollTo({ top: 300, behavior: 'smooth' })
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setCurrentPage && setCurrentPage('discover')
                     }}
                     className="mt-4 bg-[#85312C] hover:bg-[#702622] text-white text-xs font-semibold py-2 px-4 rounded-xl shadow-xs transition-colors cursor-pointer"
                   >
-                    Pick Restaurant →
+                    + Add Restaurant from Discover →
                   </button>
                 </div>
               )}
@@ -1334,10 +1210,10 @@ export default function ComparePage({
             <div className="border-t border-neutral-200/90 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
               <button
                 type="button"
-                onClick={() => setCurrentStep(2)}
-                className="text-neutral-700 hover:text-[#85312C] text-sm font-medium transition-colors cursor-pointer"
+                onClick={() => setCurrentPage && setCurrentPage('discover')}
+                className="text-neutral-700 hover:text-[#85312C] text-sm font-medium transition-colors cursor-pointer flex items-center gap-1.5"
               >
-                ← Change selected restaurants
+                <span>← Change selected restaurants in Discover</span>
               </button>
 
               <div className="flex items-center gap-3">

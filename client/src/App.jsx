@@ -104,6 +104,26 @@ export default function App() {
     }
   })
 
+  const [discoveredRestaurants, setDiscoveredRestaurants] = useState(() => {
+    try {
+      const saved = localStorage.getItem('zaika_discovered_restaurants')
+      return saved ? JSON.parse(saved) : []
+    } catch {
+      return []
+    }
+  })
+
+  const handleUpdateDiscoveredRestaurants = useCallback((restaurantsList) => {
+    if (Array.isArray(restaurantsList) && restaurantsList.length > 0) {
+      setDiscoveredRestaurants(restaurantsList)
+      try {
+        localStorage.setItem('zaika_discovered_restaurants', JSON.stringify(restaurantsList))
+      } catch (e) {
+        console.error(e)
+      }
+    }
+  }, [])
+
   const [recentSearches, setRecentSearches] = useState(() => {
     try {
       const saved = localStorage.getItem('zaika_recent_searches')
@@ -401,6 +421,7 @@ export default function App() {
             onToggleFavorite={handleToggleFavorite}
             selectedForCompare={selectedForCompare}
             onToggleCompare={handleToggleCompare}
+            onUpdateDiscoveredRestaurants={handleUpdateDiscoveredRestaurants}
           />
         ) : (
           <LoginPage
@@ -442,6 +463,8 @@ export default function App() {
             customRestaurants={customRestaurants}
             favorites={favorites}
             onToggleFavorite={handleToggleFavorite}
+            discoveredRestaurants={discoveredRestaurants}
+            onUpdateDiscoveredRestaurants={handleUpdateDiscoveredRestaurants}
           />
         ) : (
           <LoginPage

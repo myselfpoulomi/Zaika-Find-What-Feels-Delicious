@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import heroBg from '../assets/hero_bg.jpg'
 import LocationPickerModal from '../components/LocationPickerModal'
 import RestaurantDetailsModal from '../components/RestaurantDetailsModal'
+import { ensureRestaurantMenu } from '../services/restaurantService'
 
 // Helper function to calculate real geographical distance in km (Haversine formula)
 function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
@@ -21,13 +22,14 @@ function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
 
 
 export default function DiscoverPage({
-  setCurrentPage: _setCurrentPage,
+  setCurrentPage,
   initialQuery = '',
   onAddRecentSearch,
   favorites: externalFavorites,
   onToggleFavorite: externalOnToggleFavorite,
   selectedForCompare: externalSelectedForCompare,
-  onToggleCompare: externalOnToggleCompare
+  onToggleCompare: externalOnToggleCompare,
+  onUpdateDiscoveredRestaurants
 }) {
   const [searchQuery, setSearchQuery] = useState(initialQuery)
   const [selectedLocation, setSelectedLocation] = useState(() => {
@@ -70,7 +72,14 @@ export default function DiscoverPage({
   const favorites = externalFavorites !== undefined ? externalFavorites : internalFavorites
 
   const [selectedRestaurantDetails, setSelectedRestaurantDetails] = useState(null)
-  const [restaurants, setRestaurants] = useState([])
+  const [restaurants, setRestaurants] = useState(() => {
+    try {
+      const saved = localStorage.getItem('zaika_discovered_restaurants')
+      return saved ? JSON.parse(saved) : []
+    } catch {
+      return []
+    }
+  })
   const [isLoadingRestaurants, setIsLoadingRestaurants] = useState(true)
   const [dataSource, setDataSource] = useState('loading') // 'google' | 'loading'
   const [apiNotice, setApiNotice] = useState('')
@@ -110,15 +119,18 @@ export default function DiscoverPage({
                 const processedPhotos = rawPhotos.map((p) =>
                   p.startsWith('/api') ? `http://localhost:5000${p}` : p
                 )
-                return {
+                return ensureRestaurantMenu({
                   ...item,
                   image: item.image?.startsWith('/api')
                     ? `http://localhost:5000${item.image}`
                     : (item.image || heroBg),
                   photos: processedPhotos.length > 0 ? processedPhotos : [heroBg],
-                }
+                })
               })
               setRestaurants(processed)
+              if (onUpdateDiscoveredRestaurants) {
+                onUpdateDiscoveredRestaurants(processed)
+              }
             } else {
               setRestaurants([])
             }
@@ -687,6 +699,40 @@ export default function DiscoverPage({
           }
         }}
       />
+
+      {/* Floating Compare Action Bar when restaurants are selected */}
+      {Object.values(selectedForCompare).filter(Boolean).length > 0 && (
+        <div className="fixed bottom-6 inset-x-0 z-40 flex justify-center px-4 pointer-events-none animate-fade-in">
+          <div className="bg-neutral-900/95 backdrop-blur-md text-white px-5 py-3 rounded-2xl shadow-2xl border border-neutral-700/80 flex items-center justify-between gap-4 sm:gap-8 pointer-events-auto max-w-xl w-full">
+            <div className="flex items-center gap-2.5">
+              <span className="w-7 h-7 rounded-full bg-[#85312C] text-white flex items-center justify-center text-xs font-bold shadow-xs">
+                {Object.values(selectedForCompare).filter(Boolean).length}
+              </span>
+              <div>
+                <span className="text-xs sm:text-sm font-semibold block text-neutral-100">
+                  {Object.values(selectedForCompare).filter(Boolean).length === 1
+                    ? '1 restaurant selected for comparison'
+                    : `${Object.values(selectedForCompare).filter(Boolean).length} restaurants selected`}
+                </span>
+                <span className="text-[11px] text-neutral-400 block">
+                  {Object.values(selectedForCompare).filter(Boolean).length >= 2
+                    ? 'Ready for side-by-side comparison & AI bill calculation'
+                    : 'Pick at least 1 more place to compare'}
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setCurrentPage && setCurrentPage('compare')}
+              className="bg-[#85312C] hover:bg-[#9B3831] text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl transition-all shadow-md flex items-center gap-1.5 cursor-pointer shrink-0"
+            >
+              <span>Go to Compare</span>
+              <span>→</span>
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
