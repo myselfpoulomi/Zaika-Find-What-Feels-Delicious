@@ -534,6 +534,68 @@ export default function ComparePage({
     }
   }, [compareList.length, selectedIds.join(','), budget, people, cuisine, dietary, drinksInput, craving])
 
+  // AI Comparing Animation States
+  const [isAiComparingAnimation, setIsAiComparingAnimation] = useState(false)
+  const [aiProgress, setAiProgress] = useState(0)
+  const [analysisMessageIndex, setAnalysisMessageIndex] = useState(0)
+  const [hasRunInitialAiAnimation, setHasRunInitialAiAnimation] = useState(false)
+
+  const aiAnalysisSteps = useMemo(() => [
+    'Analyzing categorized menus & signature dishes...',
+    `Evaluating flavor profiles against ${cuisine} & ${dietary} preferences...`,
+    craving ? `Cross-referencing dishes for craving: "${craving}"...` : `Simulating meal combinations for ${people} people within ₹${budget}...`,
+    'Calculating taste compatibility scores & real tax-inclusive bills...',
+    'Synthesizing head-to-head comparison matrix & recommendations...'
+  ], [cuisine, dietary, craving, people, budget])
+
+  const triggerAiComparisonAnimation = () => {
+    setIsAiComparingAnimation(true)
+    setAiProgress(15)
+    setAnalysisMessageIndex(0)
+    setCurrentStep(3)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  // Handle animation timer and message steps
+  useEffect(() => {
+    if (!isAiComparingAnimation) return
+
+    let current = 15
+    const progressTimer = setInterval(() => {
+      // Smooth progress over ~4.8 seconds
+      current += Math.random() * 1.1 + 0.9
+      if (current >= 96) current = 96
+      setAiProgress(current)
+    }, 60)
+
+    const messageTimer = setInterval(() => {
+      setAnalysisMessageIndex((prev) => (prev + 1) % aiAnalysisSteps.length)
+    }, 950)
+
+    const finishTimer = setTimeout(() => {
+      setAiProgress(100)
+      setTimeout(() => {
+        setIsAiComparingAnimation(false)
+      }, 400)
+    }, 4800)
+
+    return () => {
+      clearInterval(progressTimer)
+      clearInterval(messageTimer)
+      clearTimeout(finishTimer)
+    }
+  }, [isAiComparingAnimation, aiAnalysisSteps.length])
+
+  // Automatically trigger animation on first entry into Step 3 if 2+ places selected
+  useEffect(() => {
+    if (currentStep === 3 && compareList.length >= 2 && !hasRunInitialAiAnimation) {
+      setHasRunInitialAiAnimation(true)
+      setIsAiComparingAnimation(true)
+      setAiProgress(15)
+      setAnalysisMessageIndex(0)
+    }
+  }, [currentStep, compareList.length, hasRunInitialAiAnimation])
+
   // Find the AI Winner among the selected restaurants (prioritizing live OpenAI result if available)
   const aiWinner = useMemo(() => {
     if (compareList.length === 0) return null
@@ -722,8 +784,7 @@ export default function ComparePage({
                     <button
                       type="button"
                       onClick={() => {
-                        setCurrentStep(3)
-                        window.scrollTo({ top: 0, behavior: 'smooth' })
+                        triggerAiComparisonAnimation()
                       }}
                       className="bg-[#85312C] hover:bg-[#702622] text-white text-xs font-semibold py-2 px-3.5 rounded-lg transition-colors cursor-pointer shadow-2xs"
                     >
@@ -969,10 +1030,11 @@ export default function ComparePage({
                     type="button"
                     onClick={() => {
                       // Pick top 2 matches if none selected
-                      const top2 = scoredRestaurants.slice(0, 2).map((r) => r.id)
-                      setSelectedIds(top2)
-                      setCurrentStep(3)
-                      window.scrollTo({ top: 0, behavior: 'smooth' })
+                      if (selectedIds.length < 2) {
+                        const top2 = scoredRestaurants.slice(0, 2).map((r) => r.id)
+                        setSelectedIds(top2)
+                      }
+                      triggerAiComparisonAnimation()
                     }}
                     className="border border-[#85312C] text-[#85312C] hover:bg-[#FAF1E8] text-sm font-semibold py-2.5 px-4 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5"
                   >
@@ -985,8 +1047,7 @@ export default function ComparePage({
                   <button
                     type="button"
                     onClick={() => {
-                      setCurrentStep(3)
-                      window.scrollTo({ top: 0, behavior: 'smooth' })
+                      triggerAiComparisonAnimation()
                     }}
                     className="bg-[#85312C] hover:bg-[#702622] text-white text-sm font-semibold py-2.5 px-6 rounded-lg shadow-sm transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 group"
                   >
@@ -1064,11 +1125,11 @@ export default function ComparePage({
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setCurrentPage && setCurrentPage('discover')}
-                  className="bg-[#85312C] hover:bg-[#702622] text-white text-xs font-semibold py-2 px-3.5 rounded-lg shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+                  onClick={triggerAiComparisonAnimation}
+                  className="bg-[#85312C] hover:bg-[#702622] text-white text-xs font-semibold py-2 px-3 rounded-lg shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+                  title="Re-run AI Analysis Animation"
                 >
-                  <span>+ Add Restaurant from Discover</span>
-                  <span>→</span>
+                  <span>⚡ Re-Analyze with AI</span>
                 </button>
                 <button
                   type="button"
@@ -1117,6 +1178,103 @@ export default function ComparePage({
                 </div>
               </div>
             )}
+
+            {/* AI SCANNING & COMPARISON ANIMATION SCREEN */}
+            {compareList.length >= 2 && isAiComparingAnimation ? (
+              <div className="bg-white rounded-3xl border border-neutral-200/90 shadow-sm p-8 sm:p-14 text-center my-6 space-y-8 max-w-2xl mx-auto overflow-hidden relative animate-fade-in">
+                {/* Glow orbs */}
+                <div className="absolute -top-24 -left-24 w-72 h-72 bg-[#FAF1E8] rounded-full blur-3xl opacity-70 pointer-events-none" />
+                <div className="absolute -bottom-24 -right-24 w-72 h-72 bg-[#F7EEDE] rounded-full blur-3xl opacity-70 pointer-events-none" />
+
+                {/* Clean, Elegant Header (Removed square badge and black pill) */}
+                <div className="relative z-10 flex flex-col items-center">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FAF1E8] border border-[#EADBCC] text-[#85312C] text-xs font-semibold tracking-wide shadow-2xs mb-3">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#85312C] opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#85312C]"></span>
+                    </span>
+                    <span>Zaika AI Comparison Engine</span>
+                  </div>
+
+                  <h3 className="font-serif text-2xl sm:text-3xl text-neutral-900 font-normal">
+                    Comparing Taste Profiles & Real Bills...
+                  </h3>
+                  <p className="text-xs sm:text-sm text-neutral-500 mt-1 max-w-md">
+                    Scanning menus, calculating custom dish quantities, and scoring taste compatibility.
+                  </p>
+                </div>
+
+                {/* Head-to-Head Venue Cards with Animated Scanner */}
+                <div className="relative z-10 max-w-lg mx-auto">
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4 relative items-center">
+                    {compareList.slice(0, 2).map((r, i) => (
+                      <div
+                        key={r.id}
+                        className="bg-[#FAF8F5] rounded-2xl border border-neutral-200 p-3.5 text-left relative overflow-hidden group shadow-2xs"
+                      >
+                        {/* Animated Laser Scanning Shimmer */}
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#85312C]/15 to-transparent h-1/2 w-full animate-ai-scan pointer-events-none" />
+
+                        <div className="flex items-center gap-2.5">
+                          <img
+                            src={r.image}
+                            alt={r.name}
+                            className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover border border-neutral-200 shrink-0"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <span className="text-[9px] font-bold uppercase tracking-wider text-[#85312C] block">
+                              Venue #{i + 1}
+                            </span>
+                            <h4 className="font-serif text-xs sm:text-sm font-bold text-neutral-900 truncate">
+                              {r.name}
+                            </h4>
+                            <span className="text-[10px] text-neutral-500 block truncate">
+                              ★ {r.rating} · {r.cuisine}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Micro data scan badges */}
+                        <div className="mt-2.5 pt-2 border-t border-neutral-200/80 flex items-center justify-between text-[10px] text-neutral-600">
+                          <span className="font-mono text-[#85312C]">Scanning items...</span>
+                          <span className="font-semibold text-emerald-700">₹{budget} target</span>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Central VS Badge */}
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-neutral-900 text-white font-serif font-bold text-xs flex items-center justify-center border-2 border-white shadow-md z-20">
+                      VS
+                    </div>
+                  </div>
+                </div>
+
+                {/* Live Progress Bar & Cycling Status Steps */}
+                <div className="relative z-10 max-w-md mx-auto space-y-3">
+                  {/* Percentage Bar */}
+                  <div className="w-full bg-neutral-100 h-2.5 rounded-full overflow-hidden border border-neutral-200/80 p-0.5">
+                    <div
+                      className="h-full bg-gradient-to-r from-[#85312C] via-amber-600 to-[#85312C] rounded-full transition-all duration-300 ease-out"
+                      style={{ width: `${aiProgress}%` }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-neutral-500 font-medium px-1">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-[#85312C] animate-ping" />
+                      <span>Synthesizing culinary synergy...</span>
+                    </span>
+                    <span className="font-mono font-bold text-[#85312C]">{Math.round(aiProgress)}%</span>
+                  </div>
+
+                  {/* Dynamic Animated Status Message */}
+                  <div className="bg-[#FAF5EA] border border-[#F0E6D2] rounded-xl py-2.5 px-4 text-xs text-neutral-700 font-medium min-h-[44px] flex items-center justify-center transition-all animate-fade-in shadow-2xs">
+                    <span>{aiAnalysisSteps[analysisMessageIndex]}</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
 
             {/* AI CONCIERGE VERDICT BANNER */}
             {compareList.length >= 2 && aiWinner && (
@@ -1510,8 +1668,10 @@ export default function ComparePage({
                 </button>
               </div>
             </div>
-          </div>
+          </>
         )}
+      </div>
+    )}
         </div>
       </main>
 
