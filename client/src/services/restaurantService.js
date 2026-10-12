@@ -136,3 +136,38 @@ export async function fetchRestaurantMenu(restaurant) {
     return null
   }
 }
+
+export async function fetchAiComparison({
+  restaurants = [],
+  budget = 1500,
+  people = 2,
+  cuisine = 'Any',
+  dietary = 'Vegetarian',
+  drinksInput = '',
+  craving = ''
+} = {}) {
+  try {
+    const res = await fetch('http://localhost:5000/api/restaurants/ai-compare', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        restaurants,
+        budget,
+        people,
+        cuisine,
+        dietary,
+        drinksInput,
+        craving
+      })
+    })
+    if (!res.ok) return null
+    const json = await res.json()
+    if (json.success && json.data) {
+      return json.data
+    }
+    return null
+  } catch (err) {
+    console.warn('[restaurantService] fetchAiComparison error:', err)
+    return null
+  }
+}

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { fetchLiveRestaurants, ensureRestaurantMenu } from '../services/restaurantService'
+import { fetchLiveRestaurants, ensureRestaurantMenu, fetchAiComparison } from '../services/restaurantService'
 import MenuModal from '../components/MenuModal'
 
 export default function ComparePage({
@@ -14,14 +14,7 @@ export default function ComparePage({
   onUpdateDiscoveredRestaurants
 }) {
   // Step in the compare wizard: 1 = Your plans, 2 = Pick places (redirects to Discover), 3 = Compare menus
-  const [currentStep, setCurrentStep] = useState(() => {
-    try {
-      const active = Object.values(selectedForCompare || {}).filter(Boolean).length
-      return active >= 2 ? 3 : 1
-    } catch {
-      return 1
-    }
-  })
+  const [currentStep, setCurrentStep] = useState(1)
 
   // If user is on Step 2 (Pick places), redirect directly to Discover page
   useEffect(() => {
@@ -438,9 +431,71 @@ export default function ComparePage({
     }
   }
 
-  // Find the AI Winner among the selected restaurants
+  // Live OpenAI comparison state
+  const [liveAiComparison, setLiveAiComparison] = useState(null)
+  const [isLoadingAiComparison, setIsLoadingAiComparison] = useState(false)
+
+  // Fetch AI comparison from backend (powered by OpenAI gpt-4o-mini)
+  useEffect(() => {
+    if (compareList.length < 2) {
+      setLiveAiComparison(null)
+      return
+    }
+
+    let isMounted = true
+    setIsLoadingAiComparison(true)
+
+    const timer = setTimeout(async () => {
+      try {
+        const payload = {
+          restaurants: compareList.map((r) => ({
+            id: r.id,
+            name: r.name,
+            cuisine: r.cuisine || r.cuisineType || '',
+            rating: r.rating || 4.2,
+            offer: r.offer || '',
+            signatureDish: r.signatureDish || ''
+          })),
+          budget,
+          people,
+          cuisine,
+          dietary,
+          drinksInput,
+          craving
+        }
+        const data = await fetchAiComparison(payload)
+        if (isMounted && data) {
+          setLiveAiComparison(data)
+        }
+      } catch (err) {
+        console.warn('AI comparison fetch error:', err)
+      } finally {
+        if (isMounted) {
+          setIsLoadingAiComparison(false)
+        }
+      }
+    }, 350)
+
+    return () => {
+      isMounted = false
+      clearTimeout(timer)
+    }
+  }, [compareList.length, selectedIds.join(','), budget, people, cuisine, dietary, drinksInput, craving])
+
+  // Find the AI Winner among the selected restaurants (prioritizing live OpenAI result if available)
   const aiWinner = useMemo(() => {
     if (compareList.length === 0) return null
+    if (liveAiComparison?.winnerId) {
+      const liveWin = compareList.find(
+        (r) => String(r.id) === String(liveAiComparison.winnerId) || (r.name && liveAiComparison.winnerName && r.name.toLowerCase() === liveAiComparison.winnerName.toLowerCase())
+      )
+      if (liveWin) {
+        return {
+          ...liveWin,
+          aiScore: liveAiComparison.matchScore || liveWin.aiScore
+        }
+      }
+    }
     let best = compareList[0]
     compareList.forEach((r) => {
       if (r.aiScore > best.aiScore) {
@@ -448,7 +503,7 @@ export default function ComparePage({
       }
     })
     return best
-  }, [compareList])
+  }, [compareList, liveAiComparison])
 
   return (
     <div className="flex-1 w-full bg-[#FAF8F5]">
@@ -579,9 +634,53 @@ export default function ComparePage({
                 What are we working with?
               </h2>
               <p className="text-neutral-500 text-sm sm:text-base mt-1.5">
-                A few details help us find the right kind of meal and let the Zaika AI find the best match.
+                Set your budget and dining preferences first, then let Zaika AI analyze and compare your chosen places.
               </p>
             </div>
+
+            {/* If user already picked restaurants from Discover */}
+            {chosenRestaurants.length > 0 && (
+              <div className="bg-[#FAF1E8] border border-[#F0DFD0] rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-white border border-[#E8D4C0] text-[#85312C] font-serif font-bold text-lg flex items-center justify-center shrink-0 shadow-2xs">
+                    {chosenRestaurants.length}
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-bold tracking-wider uppercase text-[#85312C] block">
+                      Places Selected From Discover
+                    </span>
+                    <h3 className="font-serif text-base sm:text-lg text-neutral-900 font-medium line-clamp-1">
+                      {chosenRestaurants.map((r) => r.name).join(' vs ')}
+                    </h3>
+                    <p className="text-xs text-neutral-600 mt-0.5">
+                      Confirm your budget and preferences below, then continue to the AI side-by-side comparison.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage && setCurrentPage('discover')}
+                    className="border border-neutral-300 hover:bg-white bg-white/70 text-neutral-700 text-xs font-semibold py-2 px-3 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Change in Discover ↗
+                  </button>
+                  {chosenRestaurants.length >= 2 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCurrentStep(3)
+                        window.scrollTo({ top: 0, behavior: 'smooth' })
+                      }}
+                      className="bg-[#85312C] hover:bg-[#702622] text-white text-xs font-semibold py-2 px-3.5 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                    >
+                      Skip to Compare →
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Form Card (Matches white card in user screenshot) */}
             <div className="bg-white rounded-2xl border border-neutral-200/90 p-6 sm:p-8 shadow-xs">
@@ -809,39 +908,55 @@ export default function ComparePage({
                   onClick={() => setCurrentPage && setCurrentPage('discover')}
                   className="border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-sm font-semibold py-2.5 px-4 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5"
                 >
-                  <span>+ Add Places from Discover</span>
-                  <span>→</span>
+                  <span>{chosenRestaurants.length > 0 ? 'Edit Places in Discover' : '+ Add Places from Discover'}</span>
+                  <span>↗</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    // Pick top 2 matches if none selected
-                    if (selectedIds.length < 2) {
+                {chosenRestaurants.length < 2 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Pick top 2 matches if none selected
                       const top2 = scoredRestaurants.slice(0, 2).map((r) => r.id)
                       setSelectedIds(top2)
-                    }
-                    setCurrentStep(3)
-                    window.scrollTo({ top: 0, behavior: 'smooth' })
-                  }}
-                  className="border border-[#85312C] text-[#85312C] hover:bg-[#FAF1E8] text-sm font-semibold py-2.5 px-5 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-                >
-                  <span>Quick AI Compare</span>
-                  <span className="text-xs">⚡</span>
-                </button>
+                      setCurrentStep(3)
+                      window.scrollTo({ top: 0, behavior: 'smooth' })
+                    }}
+                    className="border border-[#85312C] text-[#85312C] hover:bg-[#FAF1E8] text-sm font-semibold py-2.5 px-4 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <span>Quick AI Compare</span>
+                    <span className="text-xs">⚡</span>
+                  </button>
+                )}
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (setCurrentPage) setCurrentPage('discover')
-                  }}
-                  className="bg-[#85312C] hover:bg-[#702622] text-white text-sm font-semibold py-2.5 px-6 rounded-lg shadow-sm transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 group"
-                >
-                  <span>Pick places in Discover ({selectedIds.length})</span>
-                  <span className="text-base leading-none transition-transform group-hover:translate-x-0.5">
-                    →
-                  </span>
-                </button>
+                {chosenRestaurants.length >= 2 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCurrentStep(3)
+                      window.scrollTo({ top: 0, behavior: 'smooth' })
+                    }}
+                    className="bg-[#85312C] hover:bg-[#702622] text-white text-sm font-semibold py-2.5 px-6 rounded-lg shadow-sm transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 group"
+                  >
+                    <span>Proceed to AI Compare ({chosenRestaurants.length} places)</span>
+                    <span className="text-base leading-none transition-transform group-hover:translate-x-0.5">
+                      →
+                    </span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (setCurrentPage) setCurrentPage('discover')
+                    }}
+                    className="bg-[#85312C] hover:bg-[#702622] text-white text-sm font-semibold py-2.5 px-6 rounded-lg shadow-sm transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 group"
+                  >
+                    <span>Pick places in Discover ({chosenRestaurants.length}/2)</span>
+                    <span className="text-base leading-none transition-transform group-hover:translate-x-0.5">
+                      →
+                    </span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -956,26 +1071,53 @@ export default function ComparePage({
               <div className="bg-gradient-to-r from-[#FAF1E8] via-[#FAF5EA] to-[#F7EEDE] rounded-2xl border border-[#F0DFD0] p-6 shadow-xs">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-[#85312C] uppercase">
+                    <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-[#85312C] uppercase flex-wrap">
                       <span className="text-amber-600 text-sm">✨</span>
                       <span>Zaika AI Taste & Bill Concierge Verdict</span>
+                      {liveAiComparison ? (
+                        <span className="bg-[#85312C] text-white text-[10px] px-2.5 py-0.5 rounded-full font-sans font-semibold tracking-normal">
+                          OpenAI GPT-4o-mini
+                        </span>
+                      ) : isLoadingAiComparison ? (
+                        <span className="bg-amber-100 text-amber-800 text-[10px] px-2.5 py-0.5 rounded-full font-sans font-semibold tracking-normal animate-pulse">
+                          Analyzing with AI...
+                        </span>
+                      ) : null}
                     </div>
 
                     <h3 className="font-serif text-2xl text-neutral-900 font-normal">
-                      Top Match:{' '}
-                      <strong className="font-bold text-[#85312C] underline decoration-[#85312C]/30 decoration-2 underline-offset-4">
-                        {aiWinner.name}
-                      </strong>{' '}
-                      ({aiWinner.aiScore}% Match)
+                      {liveAiComparison?.verdictTitle ? (
+                        <>
+                          {liveAiComparison.verdictTitle}:{' '}
+                          <strong className="font-bold text-[#85312C] underline decoration-[#85312C]/30 decoration-2 underline-offset-4">
+                            {aiWinner.name}
+                          </strong>{' '}
+                          ({aiWinner.aiScore}% Match)
+                        </>
+                      ) : (
+                        <>
+                          Top Match:{' '}
+                          <strong className="font-bold text-[#85312C] underline decoration-[#85312C]/30 decoration-2 underline-offset-4">
+                            {aiWinner.name}
+                          </strong>{' '}
+                          ({aiWinner.aiScore}% Match)
+                        </>
+                      )}
                     </h3>
 
                     <p className="text-neutral-700 text-sm max-w-3xl leading-relaxed">
-                      Based on your budget of <strong>₹{budget}</strong> for <strong>{people} {people === 1 ? 'person' : 'people'}</strong>, preference for <strong>{cuisine}</strong> ({dietary})
-                      {drinksInput ? <>, drinks ({drinksInput})</> : null}
-                      {craving ? <>, and food cravings ({craving})</> : null}:
-                      <br className="hidden sm:inline" />
-                      {' '}
-                      <em>{aiWinner.name}</em> offers the ideal culinary synergy with signature specialty <strong>{aiWinner.signatureDish}</strong> and maximum savings after their {aiWinner.offer} discount.
+                      {liveAiComparison?.verdictExplanation ? (
+                        liveAiComparison.verdictExplanation
+                      ) : (
+                        <>
+                          Based on your budget of <strong>₹{budget}</strong> for <strong>{people} {people === 1 ? 'person' : 'people'}</strong>, preference for <strong>{cuisine}</strong> ({dietary})
+                          {drinksInput ? <>, drinks ({drinksInput})</> : null}
+                          {craving ? <>, and food cravings ({craving})</> : null}:
+                          <br className="hidden sm:inline" />
+                          {' '}
+                          <em>{aiWinner.name}</em> offers the ideal culinary synergy with signature specialty <strong>{aiWinner.signatureDish}</strong> and maximum savings after their {aiWinner.offer} discount.
+                        </>
+                      )}
                     </p>
                   </div>
 
@@ -1066,10 +1208,39 @@ export default function ComparePage({
                         </p>
 
                         {/* Signature Dish Pill */}
-                        <div className="bg-[#FAF8F5] p-2.5 rounded-xl border border-neutral-100 text-xs text-neutral-700 mb-4 flex items-center justify-between">
+                        <div className="bg-[#FAF8F5] p-2.5 rounded-xl border border-neutral-100 text-xs text-neutral-700 mb-3 flex items-center justify-between">
                           <span className="text-neutral-500 text-[11px]">Signature Dish:</span>
                           <strong className="text-[#85312C] font-semibold">{restaurant.signatureDish}</strong>
                         </div>
+
+                        {/* Live AI Insights if returned by OpenAI */}
+                        {liveAiComparison?.restaurantInsights && (() => {
+                          const insight = liveAiComparison.restaurantInsights.find(
+                            (ins) => String(ins.id) === String(restaurant.id) || (ins.name && restaurant.name && ins.name.toLowerCase() === restaurant.name.toLowerCase())
+                          )
+                          if (!insight) return null
+                          return (
+                            <div className="mb-3 p-2.5 bg-[#FAF5EA] rounded-xl border border-[#F0E6D2] text-xs space-y-1">
+                              <span className="text-[10px] uppercase font-bold text-[#85312C] tracking-wider block">
+                                ✨ AI Highlights
+                              </span>
+                              {Array.isArray(insight.pros) && insight.pros.length > 0 && (
+                                <ul className="text-neutral-700 text-[11px] list-disc list-inside space-y-0.5">
+                                  {insight.pros.map((pro, pIdx) => (
+                                    <li key={pIdx} className="leading-tight">{pro}</li>
+                                  ))}
+                                </ul>
+                              )}
+                              {insight.budgetFit && (
+                                <div className="pt-1">
+                                  <span className="inline-block text-[10px] text-emerald-800 font-medium bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                    {insight.budgetFit}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })()}
 
                         {/* Curated Meal Plan Header */}
                         <div className="flex items-center justify-between pb-2 mb-2 border-b border-neutral-100">

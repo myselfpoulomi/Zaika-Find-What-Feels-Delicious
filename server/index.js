@@ -86,5 +86,5 @@ app.use((err, req, res, next) => {
 
 // Start Server
 app.listen(PORT, () => {
-  console.log(`🚀 Zaika server running on http://localhost:${PORT}`);
+  console.log(`🚀 Zaika server running on http://localhost:${PORT} with AI enabled`);
 });
