@@ -165,6 +165,8 @@ export default function ComparePage({
   const [unselectedDishes, setUnselectedDishes] = useState({})
   // Extra dishes added from modal: { [restaurantId]: [dish, ...] }
   const [extraDishes, setExtraDishes] = useState({})
+  // Custom dish quantities: { [`${restaurantId}_${dishName}`]: number }
+  const [dishQuantities, setDishQuantities] = useState({})
 
   // Category filter in Step 2
   const [placeFilter, setPlaceFilter] = useState('All')
@@ -381,13 +383,54 @@ export default function ComparePage({
     return plans
   }, [compareList, people, drinksInput])
 
+  // Helper to extract numeric price from dish
+  const getDishPriceNum = (dish) => {
+    if (!dish) return 0
+    if (typeof dish.priceNum === 'number') return dish.priceNum
+    if (typeof dish.price === 'number') return dish.price
+    const parsed = Number(String(dish.price || '').replace(/[^0-9.]/g, ''))
+    return isNaN(parsed) ? 0 : parsed
+  }
+
+  // Helper to get quantity of a dish
+  const getDishQty = (restaurantId, dishName) => {
+    const key = `${restaurantId}_${dishName}`
+    if (unselectedDishes[key]) return 0
+    return dishQuantities[key] !== undefined ? dishQuantities[key] : 1
+  }
+
   // Toggle an individual dish inside the curated order for a restaurant
   const handleToggleDish = (restaurantId, dishName) => {
     const key = `${restaurantId}_${dishName}`
+    const willBeUnselected = !unselectedDishes[key]
     setUnselectedDishes((prev) => ({
       ...prev,
-      [key]: !prev[key]
+      [key]: willBeUnselected
     }))
+    if (!willBeUnselected && (dishQuantities[key] === undefined || dishQuantities[key] <= 0)) {
+      setDishQuantities((prev) => ({
+        ...prev,
+        [key]: 1
+      }))
+    }
+  }
+
+  // Update quantity of a dish
+  const handleQuantityChange = (restaurantId, dishName, newQty) => {
+    const key = `${restaurantId}_${dishName}`
+    const parsed = Math.max(0, Math.min(50, Number(newQty) || 0))
+
+    if (parsed <= 0) {
+      setUnselectedDishes((prev) => ({ ...prev, [key]: true }))
+      setDishQuantities((prev) => ({ ...prev, [key]: 0 }))
+    } else {
+      setUnselectedDishes((prev) => {
+        const copy = { ...prev }
+        delete copy[key]
+        return copy
+      })
+      setDishQuantities((prev) => ({ ...prev, [key]: parsed }))
+    }
   }
 
   // Add an extra dish from menu to custom order
@@ -398,6 +441,10 @@ export default function ComparePage({
       delete copy[key]
       return copy
     })
+    setDishQuantities((prev) => ({
+      ...prev,
+      [key]: prev[key] && prev[key] > 0 ? prev[key] : 1
+    }))
     setExtraDishes((prev) => {
       const existing = prev[restaurantId] || []
       if (existing.some((d) => d.name === dish.name)) return prev
@@ -405,16 +452,21 @@ export default function ComparePage({
     })
   }
 
-  // Calculate real bill for a restaurant based on active dishes
+  // Calculate real bill for a restaurant based on active dishes and quantities
   const calculateBill = (restaurant) => {
     const baseCurated = curatedPlans[restaurant.id] || []
     const extras = extraDishes[restaurant.id] || []
     const allDishes = [...baseCurated, ...extras]
 
-    // Active dishes (not in unselectedDishes)
+    // Active dishes (not in unselectedDishes and qty > 0)
     const activeDishes = allDishes.filter((d) => !unselectedDishes[`${restaurant.id}_${d.name}`])
 
-    const subtotal = activeDishes.reduce((sum, d) => sum + (d.priceNum || 0), 0)
+    const subtotal = activeDishes.reduce((sum, d) => {
+      const qty = getDishQty(restaurant.id, d.name)
+      const unitPrice = getDishPriceNum(d)
+      return sum + unitPrice * qty
+    }, 0)
+
     const discount = subtotal > 0 ? (restaurant.offerAmount || 50) : 0
     const taxableAmount = Math.max(0, subtotal - discount)
     const gstAndCharges = Math.round(taxableAmount * 0.05) // 5% GST
@@ -1247,51 +1299,99 @@ export default function ComparePage({
                           <span className="text-xs font-bold uppercase tracking-wider text-neutral-800">
                             Curated Meal Order
                           </span>
-                          <span className="text-[10px] text-neutral-400">Toggle dishes</span>
+                          <span className="text-[10px] text-neutral-400">Toggle & change qty</span>
                         </div>
 
-                        {/* List of Dishes with Checkboxes */}
+                        {/* List of Dishes with Checkboxes & Quantity Controls */}
                         <div className="space-y-2 text-xs">
                           {allDishes.map((dish) => {
                             const isChecked = !unselectedDishes[`${restaurant.id}_${dish.name}`]
+                            const qty = getDishQty(restaurant.id, dish.name)
+                            const unitPrice = getDishPriceNum(dish)
+                            const lineTotal = unitPrice * (isChecked ? qty : 0)
 
                             return (
-                              <label
+                              <div
                                 key={dish.name}
-                                className={`flex items-start justify-between gap-2 p-2 rounded-lg border transition-colors cursor-pointer ${
+                                className={`p-2 sm:p-2.5 rounded-xl border transition-all ${
                                   isChecked
-                                    ? 'bg-[#FAF8F5] border-neutral-200'
-                                    : 'bg-white border-dashed border-neutral-200 opacity-50 hover:opacity-80'
+                                    ? 'bg-[#FAF8F5] border-neutral-200 shadow-2xs'
+                                    : 'bg-white border-dashed border-neutral-200 opacity-60 hover:opacity-85'
                                 }`}
                               >
-                                <div className="flex items-start gap-2 flex-1">
-                                  <input
-                                    type="checkbox"
-                                    checked={isChecked}
-                                    onChange={() => handleToggleDish(restaurant.id, dish.name)}
-                                    className="mt-0.5 accent-[#85312C] rounded-sm cursor-pointer"
-                                  />
-                                  <div>
+                                <div className="flex items-start justify-between gap-2">
+                                  {/* Left: Checkbox + Dish Info */}
+                                  <div className="flex items-start gap-2 flex-1 min-w-0">
+                                    <input
+                                      type="checkbox"
+                                      id={`chk_${restaurant.id}_${dish.name}`}
+                                      checked={isChecked}
+                                      onChange={() => handleToggleDish(restaurant.id, dish.name)}
+                                      className="mt-0.5 accent-[#85312C] rounded-sm cursor-pointer shrink-0 w-3.5 h-3.5"
+                                    />
+                                    <label
+                                      htmlFor={`chk_${restaurant.id}_${dish.name}`}
+                                      className="cursor-pointer select-none min-w-0 flex-1"
+                                    >
+                                      <span
+                                        className={`font-medium block leading-tight text-xs sm:text-sm ${
+                                          isChecked ? 'text-neutral-900' : 'text-neutral-500 line-through'
+                                        }`}
+                                      >
+                                        {dish.name}
+                                      </span>
+                                      <span className="text-[10px] text-neutral-400 capitalize block mt-0.5">
+                                        {dish.category} · {dish.price} each
+                                      </span>
+                                    </label>
+                                  </div>
+
+                                  {/* Right: Quantity Box & Price */}
+                                  <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                                    {isChecked ? (
+                                      <div className="flex items-center border border-neutral-300 rounded-md bg-white overflow-hidden shadow-2xs">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleQuantityChange(restaurant.id, dish.name, qty - 1)}
+                                          className="w-5 h-6 flex items-center justify-center text-neutral-600 hover:text-white hover:bg-[#85312C] text-xs font-bold transition-colors cursor-pointer select-none"
+                                          title="Decrease quantity"
+                                        >
+                                          −
+                                        </button>
+                                        <input
+                                          type="number"
+                                          min="1"
+                                          max="50"
+                                          value={qty}
+                                          onChange={(e) => handleQuantityChange(restaurant.id, dish.name, e.target.value)}
+                                          className="w-7 h-6 text-center text-xs font-semibold text-neutral-900 bg-transparent border-x border-neutral-200 focus:outline-hidden [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                          title="Quantity"
+                                        />
+                                        <button
+                                          type="button"
+                                          onClick={() => handleQuantityChange(restaurant.id, dish.name, qty + 1)}
+                                          className="w-5 h-6 flex items-center justify-center text-neutral-600 hover:text-white hover:bg-[#85312C] text-xs font-bold transition-colors cursor-pointer select-none"
+                                          title="Increase quantity"
+                                        >
+                                          +
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <span className="text-[10px] text-neutral-400 font-medium px-1.5 py-0.5 rounded bg-neutral-100">
+                                        Off
+                                      </span>
+                                    )}
+
                                     <span
-                                      className={`font-medium block leading-tight ${
-                                        isChecked ? 'text-neutral-900' : 'text-neutral-500 line-through'
+                                      className={`font-semibold font-serif text-xs sm:text-sm text-right min-w-[46px] ${
+                                        isChecked ? 'text-neutral-900' : 'text-neutral-400'
                                       }`}
                                     >
-                                      {dish.name}
-                                    </span>
-                                    <span className="text-[10px] text-neutral-400 capitalize block mt-0.5">
-                                      {dish.category}
+                                      ₹{lineTotal}
                                     </span>
                                   </div>
                                 </div>
-                                <span
-                                  className={`font-semibold font-serif shrink-0 ${
-                                    isChecked ? 'text-neutral-900' : 'text-neutral-400'
-                                  }`}
-                                >
-                                  {dish.price}
-                                </span>
-                              </label>
+                              </div>
                             )
                           })}
                         </div>
