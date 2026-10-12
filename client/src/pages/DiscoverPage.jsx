@@ -241,9 +241,11 @@ export default function DiscoverPage({
     }
   }
 
-  const toggleFavorite = (id) => {
+  const toggleFavorite = (restaurant) => {
+    const id = restaurant && typeof restaurant === 'object' ? restaurant.id : restaurant
+    const obj = restaurant && typeof restaurant === 'object' ? restaurant : null
     if (externalOnToggleFavorite) {
-      externalOnToggleFavorite(id)
+      externalOnToggleFavorite(id, obj)
     } else {
       setInternalFavorites((prev) => ({ ...prev, [id]: !prev[id] }))
     }
@@ -532,7 +534,7 @@ export default function DiscoverPage({
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        toggleFavorite(restaurant.id)
+                        toggleFavorite(restaurant)
                       }}
                       className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-neutral-700 hover:text-rose-600 hover:bg-white shadow-xs transition-all cursor-pointer z-10"
                       aria-label="Save to favorites"

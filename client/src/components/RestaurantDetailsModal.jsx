@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { fetchRestaurantMenu } from '../services/restaurantService'
 
 export default function RestaurantDetailsModal({
   isOpen,
@@ -8,6 +9,8 @@ export default function RestaurantDetailsModal({
   const [activeTab, setActiveTab] = useState('reviews') // 'reviews' | 'photos' | 'menu'
   const [activePhotoIndex, setActivePhotoIndex] = useState(0)
   const [details, setDetails] = useState(null)
+  const [menuData, setMenuData] = useState(null)
+  const [activeMenuCategory, setActiveMenuCategory] = useState('All')
   const [loadedPlaceId, setLoadedPlaceId] = useState(null)
   const isLoadingDetails = isOpen && Boolean(restaurant?.id) && loadedPlaceId !== restaurant?.id
 
@@ -47,6 +50,15 @@ export default function RestaurantDetailsModal({
     }
 
     fetchPlaceDetails()
+
+    // Fetch rich categorized menu with dish pictures and prices
+    fetchRestaurantMenu(restaurant)
+      .then((mData) => {
+        if (isMounted && mData) {
+          setMenuData(mData)
+        }
+      })
+      .catch((e) => console.warn('Menu fetch error:', e))
 
     return () => {
       isMounted = false
@@ -309,32 +321,112 @@ export default function RestaurantDetailsModal({
             </div>
           ) : (
             /* TAB 3: MENU & DISHES */
-            <div className="space-y-3">
-              <div className="flex items-center justify-between pb-2 mb-2 border-b border-neutral-100 text-xs text-neutral-500">
-                <span>Signature Curated Menu</span>
-                <span className="text-[#85312C] font-semibold">{restaurant.offer}</span>
+            <div className="space-y-4">
+              {/* Attribution and Live Links Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-neutral-900 text-white rounded-2xl border border-neutral-800">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+                  <span className="text-xs font-semibold text-rose-300">Provided by Zomato & Google</span>
+                  <span className="text-[11px] text-neutral-400">· Verified by Zaika AI</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={menuData?.zomatoSearchUrl || `https://www.zomato.com/search?q=${encodeURIComponent(restaurant.name)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 bg-[#CB202D] hover:bg-[#b01c27] text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-colors"
+                  >
+                    <span>🔴 Zomato</span>
+                    <span>↗</span>
+                  </a>
+                  <a
+                    href={menuData?.googleSearchMenuUrl || `https://www.google.com/search?q=${encodeURIComponent(restaurant.name + ' menu')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-[11px] font-medium px-2.5 py-1 rounded-lg border border-neutral-700 transition-colors"
+                  >
+                    <span>🔍 Google</span>
+                    <span>↗</span>
+                  </a>
+                </div>
               </div>
 
-              {menu.length > 0 ? (
-                menu.map((dish, i) => (
+              {/* Category Filter Pills */}
+              {menuData?.categories && menuData.categories.length > 1 && (
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                  {['All', ...menuData.categories].map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setActiveMenuCategory(cat)}
+                      className={`text-xs px-3 py-1 rounded-full font-medium transition-colors cursor-pointer shrink-0 ${
+                        activeMenuCategory === cat
+                          ? 'bg-[#85312C] text-white'
+                          : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Items List */}
+              <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
+                {(menuData?.items && menuData.items.length > 0
+                  ? menuData.items.filter((it) => activeMenuCategory === 'All' || it.category === activeMenuCategory)
+                  : menu
+                ).map((dish, i) => (
                   <div
                     key={i}
-                    className="flex items-start justify-between p-3.5 rounded-xl bg-neutral-50 border border-neutral-100 hover:border-neutral-200 transition-colors"
+                    className="flex items-start justify-between gap-3 p-3.5 rounded-2xl bg-white border border-neutral-200/90 hover:border-neutral-300 hover:shadow-xs transition-all"
                   >
-                    <div>
-                      <h5 className="text-sm font-semibold text-neutral-900">{dish.name}</h5>
-                      <p className="text-xs text-neutral-500 mt-0.5">{dish.desc}</p>
+                    {/* Dish image if available */}
+                    {dish.image && (
+                      <img
+                        src={dish.image}
+                        alt={dish.name}
+                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover shrink-0 border border-neutral-100"
+                        loading="lazy"
+                      />
+                    )}
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <h5 className="text-sm font-semibold text-neutral-900 leading-snug">
+                          {dish.name}
+                        </h5>
+                        <span className="font-serif font-semibold text-neutral-900 text-sm ml-2 shrink-0">
+                          {dish.priceFormatted || dish.price}
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-neutral-500 mt-1 line-clamp-2 leading-relaxed">
+                        {dish.desc}
+                      </p>
+
+                      <div className="flex items-center gap-2 mt-2">
+                        {dish.isVeg ? (
+                          <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            VEGETARIAN
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                            NON-VEGETARIAN
+                          </span>
+                        )}
+
+                        {dish.isBestseller && (
+                          <span className="text-[9px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
+                            ★ Bestseller
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <span className="font-serif font-semibold text-neutral-900 text-sm ml-3 shrink-0">
-                      {dish.price}
-                    </span>
                   </div>
-                ))
-              ) : (
-                <p className="text-xs text-neutral-400 text-center py-6">
-                  Menu items will be updated shortly for this place.
-                </p>
-              )}
+                ))}
+              </div>
             </div>
           )}
         </div>

@@ -59,7 +59,14 @@ export default function App() {
   const [favorites, setFavorites] = useState(() => {
     try {
       const saved = localStorage.getItem('zaika_favorites')
-      return saved ? JSON.parse(saved) : {}
+      const parsed = saved ? JSON.parse(saved) : {}
+      const cleaned = {}
+      for (const [k, v] of Object.entries(parsed)) {
+        if (!['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].includes(String(k))) {
+          cleaned[k] = v
+        }
+      }
+      return cleaned
     } catch {
       return {}
     }
@@ -68,16 +75,30 @@ export default function App() {
   const [selectedForCompare, setSelectedForCompare] = useState(() => {
     try {
       const saved = localStorage.getItem('zaika_selected_for_compare')
-      return saved ? JSON.parse(saved) : { 1: true, 2: true }
+      const parsed = saved ? JSON.parse(saved) : {}
+      const cleaned = {}
+      for (const [k, v] of Object.entries(parsed)) {
+        if (!['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].includes(String(k))) {
+          cleaned[k] = v
+        }
+      }
+      return cleaned
     } catch {
-      return { 1: true, 2: true }
+      return {}
     }
   })
 
   const [customRestaurants, setCustomRestaurants] = useState(() => {
     try {
       const saved = localStorage.getItem('zaika_custom_restaurants')
-      return saved ? JSON.parse(saved) : {}
+      const parsed = saved ? JSON.parse(saved) : {}
+      const cleaned = {}
+      for (const [k, v] of Object.entries(parsed)) {
+        if (!['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].includes(String(k))) {
+          cleaned[k] = v
+        }
+      }
+      return cleaned
     } catch {
       return {}
     }
@@ -165,7 +186,7 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const handleToggleFavorite = (id) => {
+  const handleToggleFavorite = (id, restaurantObj = null) => {
     setFavorites((prev) => {
       const updated = { ...prev, [id]: !prev[id] }
       try {
@@ -175,6 +196,17 @@ export default function App() {
       }
       return updated
     })
+    if (restaurantObj) {
+      setCustomRestaurants((prev) => {
+        const updated = { ...prev, [id]: restaurantObj }
+        try {
+          localStorage.setItem('zaika_custom_restaurants', JSON.stringify(updated))
+        } catch (e) {
+          console.error(e)
+        }
+        return updated
+      })
+    }
   }
 
   const handleToggleCompare = (id, restaurantObj = null) => {
@@ -388,6 +420,7 @@ export default function App() {
             onToggleFavorite={handleToggleFavorite}
             selectedForCompare={selectedForCompare}
             onToggleCompare={handleToggleCompare}
+            customRestaurants={customRestaurants}
           />
         ) : (
           <LoginPage

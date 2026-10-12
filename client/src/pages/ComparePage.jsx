@@ -1,54 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
-import { ALL_RESTAURANTS } from '../data/restaurants'
-
-// Helper function to ensure restaurant has a curated menu (for live places)
-function ensureRestaurantMenu(restaurant) {
-  if (restaurant.menu && restaurant.menu.length > 0) return restaurant
-
-  const isVeg = restaurant.isVeg
-  const cuisineType = restaurant.cuisineType || 'Continental'
-  let sampleMenu = []
-
-  if (cuisineType === 'Indian') {
-    sampleMenu = [
-      { name: isVeg ? 'Saffron Paneer Tikka' : 'Tandoori Chicken Tikka', price: '₹280', priceNum: 280, category: 'starter', desc: 'Charcoal grilled kebabs with mint chutney' },
-      { name: isVeg ? 'Dal Makhani Slow Simmered' : 'Butter Chicken Royale', price: '₹320', priceNum: 320, category: 'main', desc: 'Slow simmered rich aromatic gravy' },
-      { name: 'Butter Garlic Naan (2 pcs)', price: '₹90', priceNum: 90, category: 'bread', desc: 'Fresh tandoor-baked flatbread' },
-      { name: 'Saffron Cardamom Lassi', price: '₹140', priceNum: 140, category: 'drink', desc: 'Chilled creamy yogurt beverage' },
-      { name: 'Gulab Jamun with Rabri', price: '₹130', priceNum: 130, category: 'dessert', desc: 'Warm milk dumplings soaked in syrup' }
-    ]
-  } else if (cuisineType === 'Italian') {
-    sampleMenu = [
-      { name: 'Classic Margherita Pizza', price: '₹340', priceNum: 340, category: 'main', desc: 'San Marzano tomatoes, fresh mozzarella, basil' },
-      { name: 'Handmade Fettuccine Alfredo', price: '₹310', priceNum: 310, category: 'main', desc: 'Creamy parmesan emulsion with cracked black pepper' },
-      { name: 'Herbed Garlic Bread', price: '₹140', priceNum: 140, category: 'starter', desc: 'Toasted sourdough with roasted garlic butter' },
-      { name: 'Signature Aperol Spritz', price: '₹290', priceNum: 290, category: 'drink', desc: 'Sparkling citrus refresher' },
-      { name: 'Tiramisu Tradizionale', price: '₹190', priceNum: 190, category: 'dessert', desc: 'Espresso savoiardi with mascarpone' }
-    ]
-  } else if (cuisineType === 'Café') {
-    sampleMenu = [
-      { name: 'Artisan Avocado Sourdough', price: '₹240', priceNum: 240, category: 'main', desc: 'Hass avocado on toasted artisan sourdough' },
-      { name: 'Specialty Rosetta Cappuccino', price: '₹160', priceNum: 160, category: 'drink', desc: 'Single-origin espresso with steamed milk' },
-      { name: 'Butter Croissant Flaky', price: '₹120', priceNum: 120, category: 'starter', desc: 'Freshly baked golden layered pastry' },
-      { name: 'Granola & Berry Parfait', price: '₹180', priceNum: 180, category: 'dessert', desc: 'Greek yogurt with toasted almonds and berries' }
-    ]
-  } else {
-    sampleMenu = [
-      { name: 'Signature Chef Special Plate', price: '₹320', priceNum: 320, category: 'main', desc: 'Signature preparation with seasonal sides' },
-      { name: 'Crisp Appetizer Platter', price: '₹220', priceNum: 220, category: 'starter', desc: 'Golden roasted specialty bites' },
-      { name: 'House Cooler Refresher', price: '₹150', priceNum: 150, category: 'drink', desc: 'Fresh fruit infused sparkling cooler' },
-      { name: 'Dessert of the Day', price: '₹160', priceNum: 160, category: 'dessert', desc: 'Chef confection served chilled' }
-    ]
-  }
-
-  return {
-    ...restaurant,
-    signatureDish: restaurant.signatureDish || sampleMenu[0]?.name || 'Chef Special',
-    offer: restaurant.offer || 'Up to ₹50 off',
-    offerAmount: restaurant.offerAmount || 50,
-    menu: sampleMenu
-  }
-}
+import { fetchLiveRestaurants, ensureRestaurantMenu } from '../services/restaurantService'
+import MenuModal from '../components/MenuModal'
 
 export default function ComparePage({
   setCurrentPage,
@@ -70,11 +22,44 @@ export default function ComparePage({
   const [drinksInput, setDrinksInput] = useState('')
   const [craving, setCraving] = useState('')
   const [anythingElse, setAnythingElse] = useState('Something filling, not too expensive.')
+  const [viewingMenuRestaurant, setViewingMenuRestaurant] = useState(null)
 
-  // Combine ALL_RESTAURANTS with any customRestaurants from Discover
+  // Live restaurants from Google Places API
+  const [apiRestaurants, setApiRestaurants] = useState([])
+  const [isLoadingPlaces, setIsLoadingPlaces] = useState(true)
+
+  useEffect(() => {
+    let isMounted = true
+    async function loadPlaces() {
+      setIsLoadingPlaces(true)
+      try {
+        const places = await fetchLiveRestaurants({
+          lat: 12.9716,
+          lng: 77.5946,
+          radius: 5000,
+          city: 'Bengaluru'
+        })
+        if (isMounted) {
+          setApiRestaurants(places)
+        }
+      } catch (e) {
+        console.warn('Error loading live places for ComparePage:', e)
+      } finally {
+        if (isMounted) {
+          setIsLoadingPlaces(false)
+        }
+      }
+    }
+    loadPlaces()
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  // Combine live API restaurants with any customRestaurants selected by user
   const allAvailableRestaurants = useMemo(() => {
     const map = new Map()
-    ALL_RESTAURANTS.forEach((r) => map.set(String(r.id), r))
+    apiRestaurants.forEach((r) => map.set(String(r.id), r))
     if (customRestaurants && typeof customRestaurants === 'object') {
       Object.values(customRestaurants).forEach((cr) => {
         if (cr && cr.id) {
@@ -83,7 +68,7 @@ export default function ComparePage({
       })
     }
     return Array.from(map.values())
-  }, [customRestaurants])
+  }, [apiRestaurants, customRestaurants])
 
   // Get active IDs chosen by user from app-level selectedForCompare
   const activeSelectedIds = useMemo(() => {
@@ -98,6 +83,21 @@ export default function ComparePage({
   useEffect(() => {
     setSelectedIds(activeSelectedIds)
   }, [activeSelectedIds])
+
+  // If no restaurants are selected yet and live API restaurants have loaded, default to the first 2 live places
+  useEffect(() => {
+    if (
+      allAvailableRestaurants.length >= 2 &&
+      (selectedIds.length === 0 || !allAvailableRestaurants.some(r => selectedIds.includes(r.id)))
+    ) {
+      const firstTwo = [allAvailableRestaurants[0].id, allAvailableRestaurants[1].id]
+      setSelectedIds(firstTwo)
+      if (onToggleCompare) {
+        onToggleCompare(allAvailableRestaurants[0].id, allAvailableRestaurants[0])
+        onToggleCompare(allAvailableRestaurants[1].id, allAvailableRestaurants[1])
+      }
+    }
+  }, [allAvailableRestaurants])
 
   // Exact list of restaurants chosen by user
   const chosenRestaurants = useMemo(() => {
@@ -266,7 +266,7 @@ export default function ComparePage({
         aiScore: finalScore
       }
     })
-  }, [cuisine, dietary, drinksInput, craving])
+  }, [allAvailableRestaurants, cuisine, dietary, drinksInput, craving])
 
   // Restaurants selected for side-by-side comparison
   const compareList = useMemo(() => {
@@ -843,18 +843,35 @@ export default function ComparePage({
             </div>
 
             {/* Restaurant Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {scoredRestaurants
-                .filter((r) => {
-                  if (placeFilter === 'Chosen by you') {
-                    return selectedIds.some((id) => String(id) === String(r.id))
-                  }
-                  if (placeFilter === 'Italian') return r.cuisineType === 'Italian'
-                  if (placeFilter === 'Indian') return r.cuisineType === 'Indian'
-                  if (placeFilter === 'Café') return r.cuisineType === 'Café'
-                  if (placeFilter === 'Favorites') return favorites[r.id]
-                  return true
-                })
+            {isLoadingPlaces ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 my-6">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="bg-white rounded-2xl border border-neutral-200 overflow-hidden p-4 space-y-3 animate-pulse">
+                    <div className="aspect-[16/10] bg-neutral-200 rounded-xl w-full" />
+                    <div className="h-5 bg-neutral-200 rounded w-2/3" />
+                    <div className="h-3 bg-neutral-200 rounded w-1/3" />
+                    <div className="h-4 bg-neutral-200 rounded w-full" />
+                  </div>
+                ))}
+              </div>
+            ) : scoredRestaurants.length === 0 ? (
+              <div className="py-16 text-center bg-white rounded-2xl border border-neutral-200 my-6">
+                <p className="text-neutral-700 font-medium">No live restaurants available for comparison.</p>
+                <p className="text-xs text-neutral-400 mt-1">Please ensure the server is running and GOOGLE_MAPS_API_KEY is active.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {scoredRestaurants
+                  .filter((r) => {
+                    if (placeFilter === 'Chosen by you') {
+                      return selectedIds.some((id) => String(id) === String(r.id))
+                    }
+                    if (placeFilter === 'Italian') return r.cuisineType === 'Italian'
+                    if (placeFilter === 'Indian') return r.cuisineType === 'Indian'
+                    if (placeFilter === 'Café') return r.cuisineType === 'Café' || r.category === 'Café'
+                    if (placeFilter === 'Favorites') return favorites[r.id]
+                    return true
+                  })
                 .map((restaurant) => {
                   const isSelected = selectedIds.some((id) => String(id) === String(restaurant.id))
 
@@ -936,38 +953,50 @@ export default function ComparePage({
                         </div>
 
                         {/* Action row */}
-                        <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-between gap-3">
+                        <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-between gap-2">
                           <div className="text-xs text-neutral-500">
                             <span>{restaurant.distance}</span> · <span>{restaurant.price}</span>
                           </div>
 
-                          <button
-                            type="button"
-                            onClick={() => toggleRestaurant(restaurant.id)}
-                            className={`text-xs font-semibold py-2 px-3.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
-                              isSelected
-                                ? 'bg-[#F6EEBE] text-neutral-900 font-bold hover:bg-[#ECE3AD]'
-                                : 'bg-[#85312C] hover:bg-[#702622] text-white shadow-xs'
-                            }`}
-                          >
-                            {isSelected ? (
-                              <>
-                                <span>✓</span>
-                                <span>Selected</span>
-                              </>
-                            ) : (
-                              <>
-                                <span>+</span>
-                                <span>Compare</span>
-                              </>
-                            )}
-                          </button>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setViewingMenuRestaurant(restaurant)}
+                              className="text-xs font-medium py-1.5 px-2.5 rounded-lg border border-neutral-200 hover:bg-neutral-50 text-neutral-700 transition-colors cursor-pointer"
+                              title="View full menu"
+                            >
+                              Menu ↗
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => toggleRestaurant(restaurant.id)}
+                              className={`text-xs font-semibold py-1.5 px-3 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-[#F6EEBE] text-neutral-900 font-bold hover:bg-[#ECE3AD]'
+                                  : 'bg-[#85312C] hover:bg-[#702622] text-white shadow-xs'
+                              }`}
+                            >
+                              {isSelected ? (
+                                <>
+                                  <span>✓</span>
+                                  <span>Selected</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span>+</span>
+                                  <span>Compare</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
                   )
                 })}
-            </div>
+              </div>
+            )}
 
             {/* Bottom Floating Bar */}
             <div className="sticky bottom-4 z-30 bg-neutral-900 text-white rounded-2xl p-4 shadow-xl border border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -1259,26 +1288,14 @@ export default function ComparePage({
                         </div>
 
                         {/* Card Actions */}
-                        <div className="mt-3 flex items-center gap-2">
+                        <div className="mt-3">
                           <button
                             type="button"
                             onClick={() => setActiveMenuModal(restaurant)}
-                            className="flex-1 border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-800 text-xs font-medium py-2 px-2.5 rounded-lg flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                            className="w-full border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-800 text-xs font-medium py-2 px-2.5 rounded-lg flex items-center justify-center gap-1 transition-colors cursor-pointer"
                           >
                             <span>Full menu</span>
                             <span className="text-sm">→</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              alert(
-                                `Booking table at ${restaurant.name} for ${people} people! An SMS confirmation will be sent.`
-                              )
-                            }}
-                            className="flex-1 bg-[#85312C] hover:bg-[#702622] text-white text-xs font-semibold py-2 px-2.5 rounded-lg shadow-2xs transition-colors cursor-pointer text-center"
-                          >
-                            Reserve Table
                           </button>
                         </div>
                       </div>
@@ -1437,6 +1454,12 @@ export default function ComparePage({
           </div>
         </div>
       )}
+      {/* Full Digitized Menu Modal with Photos and Prices */}
+      <MenuModal
+        isOpen={Boolean(viewingMenuRestaurant)}
+        onClose={() => setViewingMenuRestaurant(null)}
+        restaurant={viewingMenuRestaurant}
+      />
     </div>
   )
 }

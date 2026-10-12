@@ -1,17 +1,60 @@
-import { useState } from 'react'
-import { ALL_RESTAURANTS } from '../data/restaurants'
+import { useState, useEffect, useMemo } from 'react'
+import { fetchLiveRestaurants, ensureRestaurantMenu } from '../services/restaurantService'
+import MenuModal from '../components/MenuModal'
 
 export default function FavoritesPage({
   setCurrentPage,
   favorites = {},
   onToggleFavorite,
   selectedForCompare = {},
-  onToggleCompare
+  onToggleCompare,
+  customRestaurants = {}
 }) {
   const [activeMenuModal, setActiveMenuModal] = useState(null)
+  const [apiRestaurants, setApiRestaurants] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  // Filter restaurants that are currently marked as favorite
-  const savedRestaurants = ALL_RESTAURANTS.filter((r) => favorites[r.id])
+  useEffect(() => {
+    let isMounted = true
+    async function loadPlaces() {
+      setIsLoading(true)
+      try {
+        const places = await fetchLiveRestaurants({
+          lat: 12.9716,
+          lng: 77.5946,
+          radius: 5000,
+          city: 'Bengaluru'
+        })
+        if (isMounted) {
+          setApiRestaurants(places)
+        }
+      } catch (e) {
+        console.warn('Error loading places for FavoritesPage:', e)
+      } finally {
+        if (isMounted) {
+          setIsLoading(false)
+        }
+      }
+    }
+    loadPlaces()
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  // Filter restaurants that are currently marked as favorite from live API & custom restaurants
+  const savedRestaurants = useMemo(() => {
+    const map = new Map()
+    apiRestaurants.forEach((r) => map.set(String(r.id), r))
+    if (customRestaurants && typeof customRestaurants === 'object') {
+      Object.values(customRestaurants).forEach((cr) => {
+        if (cr && cr.id) {
+          map.set(String(cr.id), ensureRestaurantMenu(cr))
+        }
+      })
+    }
+    return Array.from(map.values()).filter((r) => favorites[r.id])
+  }, [apiRestaurants, customRestaurants, favorites])
 
   return (
     <main className="flex-1 w-full bg-[#FAF8F5] py-12 min-h-[calc(100vh-160px)]">
@@ -92,7 +135,7 @@ export default function FavoritesPage({
 
                     {/* Active Heart Toggle */}
                     <button
-                      onClick={() => onToggleFavorite(restaurant.id)}
+                      onClick={() => onToggleFavorite(restaurant.id, restaurant)}
                       className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-rose-500 hover:scale-105 shadow-xs transition-all cursor-pointer"
                       title="Remove from favorites"
                       aria-label="Remove from favorites"
@@ -166,7 +209,7 @@ export default function FavoritesPage({
                         </button>
 
                         <button
-                          onClick={() => onToggleCompare(restaurant.id)}
+                          onClick={() => onToggleCompare(restaurant.id, restaurant)}
                           className={`flex-1 text-xs font-semibold py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                             isSelected
                               ? 'bg-[#F6EEBE] hover:bg-[#ECE3AD] text-neutral-900'
@@ -199,64 +242,11 @@ export default function FavoritesPage({
       </div>
 
       {/* Menu Viewer Modal */}
-      {activeMenuModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative border border-neutral-100">
-            <button
-              onClick={() => setActiveMenuModal(null)}
-              className="absolute top-4 right-4 text-neutral-400 hover:text-neutral-700 text-xl font-bold w-8 h-8 rounded-full flex items-center justify-center hover:bg-neutral-100 transition-colors cursor-pointer"
-            >
-              ✕
-            </button>
-
-            <div className="flex items-center gap-4 mb-4">
-              <img
-                src={activeMenuModal.image}
-                alt={activeMenuModal.name}
-                className="w-16 h-16 rounded-xl object-cover"
-              />
-              <div>
-                <h3 className="font-serif text-2xl font-normal text-neutral-900">
-                  {activeMenuModal.name}
-                </h3>
-                <p className="text-xs text-neutral-500">
-                  {activeMenuModal.cuisine} · {activeMenuModal.distance}
-                </p>
-              </div>
-            </div>
-
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[#85312C] mb-3">
-              Highlighted Menu
-            </h4>
-
-            <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
-              {activeMenuModal.menu.map((dish, i) => (
-                <div key={i} className="flex items-start justify-between p-3 rounded-xl bg-neutral-50 border border-neutral-100">
-                  <div>
-                    <h5 className="text-sm font-semibold text-neutral-900">{dish.name}</h5>
-                    <p className="text-xs text-neutral-500 mt-0.5">{dish.desc}</p>
-                  </div>
-                  <span className="font-serif font-semibold text-neutral-900 text-sm ml-3">
-                    {dish.price}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-5 pt-4 border-t border-neutral-100 flex items-center justify-between">
-              <span className="text-xs text-neutral-500">
-                Offer: <strong className="text-[#85312C] font-semibold">{activeMenuModal.offer}</strong>
-              </span>
-              <button
-                onClick={() => setActiveMenuModal(null)}
-                className="bg-[#85312C] text-white text-xs font-medium px-4 py-2 rounded-lg hover:bg-[#702622] transition-colors cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <MenuModal
+        isOpen={Boolean(activeMenuModal)}
+        onClose={() => setActiveMenuModal(null)}
+        restaurant={activeMenuModal}
+      />
     </main>
   )
 }

@@ -2,7 +2,8 @@ import express from 'express';
 import {
   getNearbyRestaurants,
   getRestaurantPhoto,
-  getRestaurantDetails
+  getRestaurantDetails,
+  getRestaurantMenu
 } from '../controllers/restaurant.controller.js';
 
 const router = express.Router();
@@ -16,5 +17,9 @@ router.get('/photo', getRestaurantPhoto);
 // GET /api/restaurants/:id/details - Fetch Google Reviews & full photo gallery
 router.get('/:id/details', getRestaurantDetails);
 router.get('/details', getRestaurantDetails);
+
+// GET /api/restaurants/:id/menu - Fetch authentic categorized menu with photos & prices
+router.get('/:id/menu', getRestaurantMenu);
+router.get('/menu', getRestaurantMenu);
 
 export default router;

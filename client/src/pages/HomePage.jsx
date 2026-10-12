@@ -1,8 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import heroBg from '../assets/hero_bg.jpg'
-import saffronTableImg from '../assets/saffron_table.jpg'
-import oliveHouseImg from '../assets/olive_house.jpg'
-import goldenHourImg from '../assets/golden_hour.jpg'
+import { fetchLiveRestaurants } from '../services/restaurantService'
+import MenuModal from '../components/MenuModal'
 
 export default function HomePage({
   setCurrentPage,
@@ -27,10 +26,10 @@ export default function HomePage({
     shortlist?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const [internalFavorites, setInternalFavorites] = useState({ 1: false, 2: false, 3: false })
+  const [internalFavorites, setInternalFavorites] = useState({})
   const favorites = externalFavorites !== undefined ? externalFavorites : internalFavorites
 
-  const [internalSelectedForCompare, setInternalSelectedForCompare] = useState({ 1: true, 2: true, 3: true })
+  const [internalSelectedForCompare, setInternalSelectedForCompare] = useState({})
   const selectedForCompare = externalSelectedForCompare !== undefined ? externalSelectedForCompare : internalSelectedForCompare
   const [activeModal, setActiveModal] = useState(null)
 
@@ -43,69 +42,42 @@ export default function HomePage({
     'Late night'
   ]
 
-  const restaurants = [
-    {
-      id: 1,
-      name: 'Saffron Table',
-      rating: '4.8',
-      cuisine: 'Indian · North Indian',
-      description: 'Familiar Indian flavors, thoughtfully reimagined for the modern table.',
-      offer: 'Up to ₹100 off',
-      price: '₹₹',
-      distance: '1.2 km away',
-      image: saffronTableImg,
-      sampleDishes: 'Paneer tikka · Dal makhani · Naan',
-      estimatedPrice: '₹619',
-      menu: [
-        { name: 'Saffron Paneer Tikka', price: '₹260', desc: 'Charred cottage cheese, saffron marinade, bell peppers' },
-        { name: 'Dal Makhani Slow Simmered', price: '₹210', desc: 'Overnight cooked black lentils with white butter' },
-        { name: 'Butter Garlic Naan (2 pcs)', price: '₹90', desc: 'Fresh tandoor-baked flatbread' },
-        { name: 'Dum Biryani Royale', price: '₹290', desc: 'Long grain fragrant rice with seasonal vegetables' }
-      ]
-    },
-    {
-      id: 2,
-      name: 'Olive House',
-      rating: '4.7',
-      cuisine: 'Italian · Pizzeria',
-      description: 'A little corner of Italy with handmade pastas and really good pizza.',
-      offer: 'Up to ₹50 off',
-      price: '₹₹',
-      distance: '1.8 km away',
-      image: oliveHouseImg,
-      sampleDishes: 'Margherita · Garlic bread · Coke',
-      estimatedPrice: '₹600',
-      menu: [
-        { name: 'Classic Margherita Pizza', price: '₹340', desc: 'San Marzano tomatoes, fresh mozzarella, basil' },
-        { name: 'Handmade Fettuccine Alfredo', price: '₹310', desc: 'Creamy parmesan emulsion with cracked black pepper' },
-        { name: 'Herbed Garlic Bread', price: '₹140', desc: 'Toasted sourdough with roasted garlic butter' },
-        { name: 'Tiramisu Tradizionale', price: '₹190', desc: 'Espresso-soaked savoiardi, mascarpone cream' }
-      ]
-    },
-    {
-      id: 3,
-      name: 'The Golden Hour',
-      rating: '4.9',
-      cuisine: 'Café · Breakfast',
-      description: 'Slow mornings, good coffee, and something lovely on your plate.',
-      offer: 'Up to ₹75 off',
-      price: '₹₹',
-      distance: '0.8 km away',
-      image: goldenHourImg,
-      sampleDishes: 'Avocado Toast · Croissant · Cappuccino',
-      estimatedPrice: '₹540',
-      menu: [
-        { name: 'Artisan Avocado Sourdough', price: '₹240', desc: 'Hass avocado mash, microgreens, soft boiled egg, seeds' },
-        { name: 'Butter Croissant', price: '₹120', desc: 'Flaky golden laminated pastry with French butter' },
-        { name: 'Specialty Rosetta Cappuccino', price: '₹160', desc: 'Double shot espresso with silky steamed whole milk' },
-        { name: 'Granola & Berry Parfait', price: '₹180', desc: 'Greek yogurt, wild blossom honey, toasted almonds' }
-      ]
-    }
-  ]
+  const [restaurants, setRestaurants] = useState([])
+  const [isLoadingRestaurants, setIsLoadingRestaurants] = useState(true)
 
-  const toggleFavorite = (id) => {
+  useEffect(() => {
+    let isMounted = true
+    async function loadPlaces() {
+      setIsLoadingRestaurants(true)
+      try {
+        const places = await fetchLiveRestaurants({
+          lat: 12.9716,
+          lng: 77.5946,
+          radius: 5000,
+          city: 'Bengaluru'
+        })
+        if (isMounted) {
+          setRestaurants(places.slice(0, 3))
+        }
+      } catch (err) {
+        console.warn('Failed to load places for HomePage:', err)
+      } finally {
+        if (isMounted) {
+          setIsLoadingRestaurants(false)
+        }
+      }
+    }
+    loadPlaces()
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  const toggleFavorite = (restaurant) => {
+    const id = restaurant && typeof restaurant === 'object' ? restaurant.id : restaurant
+    const obj = restaurant && typeof restaurant === 'object' ? restaurant : null
     if (externalOnToggleFavorite) {
-      externalOnToggleFavorite(id)
+      externalOnToggleFavorite(id, obj)
     } else {
       setInternalFavorites(prev => ({ ...prev, [id]: !prev[id] }))
     }
@@ -264,113 +236,131 @@ export default function HomePage({
         </div>
 
         {/* 3 Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {restaurants.map((restaurant) => {
-            const isFav = favorites[restaurant.id]
-            const isSelected = selectedForCompare[restaurant.id]
+        {isLoadingRestaurants ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-2xl border border-neutral-200 overflow-hidden p-5 space-y-4 animate-pulse">
+                <div className="aspect-[4/3] bg-neutral-200 rounded-xl w-full" />
+                <div className="h-5 bg-neutral-200 rounded w-2/3" />
+                <div className="h-3 bg-neutral-200 rounded w-1/3" />
+                <div className="h-4 bg-neutral-200 rounded w-full" />
+              </div>
+            ))}
+          </div>
+        ) : restaurants.length === 0 ? (
+          <div className="py-12 text-center bg-white rounded-2xl border border-neutral-200 p-8">
+            <p className="text-neutral-700 font-medium">No live places currently loaded.</p>
+            <p className="text-xs text-neutral-400 mt-1">Please ensure the backend server is running to fetch live Google Places data.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {restaurants.map((restaurant) => {
+              const isFav = favorites[restaurant.id]
+              const isSelected = selectedForCompare[restaurant.id]
 
-            return (
-              <div
-                key={restaurant.id}
-                className="bg-white rounded-2xl border border-neutral-200/80 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col group"
-              >
-                {/* Image Container with Badges */}
-                <div className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-100">
-                  <img
-                    src={restaurant.image}
-                    alt={restaurant.name}
-                    className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
-                  />
+              return (
+                <div
+                  key={restaurant.id}
+                  className="bg-white rounded-2xl border border-neutral-200/80 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col group"
+                >
+                  {/* Image Container with Badges */}
+                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-100">
+                    <img
+                      src={restaurant.image}
+                      alt={restaurant.name}
+                      className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
+                    />
 
-                  {/* Favorite Toggle Button */}
-                  <button
-                    onClick={() => toggleFavorite(restaurant.id)}
-                    className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-neutral-700 hover:text-rose-600 hover:bg-white shadow-sm transition-all cursor-pointer"
-                    aria-label="Save to favorites"
-                  >
-                    <svg
-                      className={`w-5 h-5 transition-colors ${
-                        isFav ? 'fill-rose-500 text-rose-500' : 'fill-none stroke-current'
-                      }`}
-                      viewBox="0 0 24 24"
-                      strokeWidth="1.8"
+                    {/* Favorite Toggle Button */}
+                    <button
+                      onClick={() => toggleFavorite(restaurant)}
+                      className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-neutral-700 hover:text-rose-600 hover:bg-white shadow-sm transition-all cursor-pointer"
+                      aria-label="Save to favorites"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-                      />
-                    </svg>
-                  </button>
+                      <svg
+                        className={`w-5 h-5 transition-colors ${
+                          isFav ? 'fill-rose-500 text-rose-500' : 'fill-none stroke-current'
+                        }`}
+                        viewBox="0 0 24 24"
+                        strokeWidth="1.8"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+                        />
+                      </svg>
+                    </button>
 
-                  {/* Offer Badge */}
-                  <div className="absolute bottom-3 left-3 bg-[#FAF1E8] text-[#85312C] text-xs font-semibold px-2.5 py-1 rounded-md shadow-sm border border-[#F3E2D4]">
-                    {restaurant.offer}
+                    {/* Offer Badge */}
+                    <div className="absolute bottom-3 left-3 bg-[#FAF1E8] text-[#85312C] text-xs font-semibold px-2.5 py-1 rounded-md shadow-sm border border-[#F3E2D4]">
+                      {restaurant.offer}
+                    </div>
                   </div>
-                </div>
 
-                {/* Card Content */}
-                <div className="p-5 flex-1 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="font-serif text-xl font-normal text-neutral-900 group-hover:text-[#85312C] transition-colors">
-                        {restaurant.name}
-                      </h3>
-                      <div className="flex items-center gap-1 text-sm font-semibold text-neutral-800">
-                        <span className="text-amber-500">★</span>
-                        <span>{restaurant.rating}</span>
+                  {/* Card Content */}
+                  <div className="p-5 flex-1 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="font-serif text-xl font-normal text-neutral-900 group-hover:text-[#85312C] transition-colors truncate">
+                          {restaurant.name}
+                        </h3>
+                        <div className="flex items-center gap-1 text-sm font-semibold text-neutral-800 shrink-0">
+                          <span className="text-amber-500">★</span>
+                          <span>{restaurant.rating}</span>
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-neutral-500 mt-1 font-normal">
+                        {restaurant.cuisine}
+                      </p>
+
+                      <p className="text-neutral-600 text-sm mt-3 leading-relaxed line-clamp-2">
+                        {restaurant.description}
+                      </p>
+                    </div>
+
+                    {/* Bottom Meta & Action Buttons */}
+                    <div className="mt-5 pt-3 border-t border-neutral-100">
+                      <div className="flex items-center gap-3 text-xs text-neutral-500 mb-3.5 font-normal">
+                        <span>{restaurant.price}</span>
+                        <span className="flex items-center gap-1">
+                          <svg className="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          {restaurant.distance}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setActiveModal(restaurant)}
+                          className="flex-1 border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-800 text-xs font-medium py-2 px-3 rounded-lg flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                        >
+                          <span>View menu</span>
+                          <span className="text-sm">→</span>
+                        </button>
+
+                        <button
+                          onClick={() => toggleSelected(restaurant)}
+                          className={`flex-1 text-xs font-semibold py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#F6EEBE] hover:bg-[#ECE3AD] text-neutral-900'
+                              : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-700'
+                          }`}
+                        >
+                          <span>✓</span>
+                          <span>{isSelected ? 'Selected' : 'Select'}</span>
+                        </button>
                       </div>
                     </div>
-
-                    <p className="text-xs text-neutral-500 mt-1 font-normal">
-                      {restaurant.cuisine}
-                    </p>
-
-                    <p className="text-neutral-600 text-sm mt-3 leading-relaxed">
-                      {restaurant.description}
-                    </p>
-                  </div>
-
-                  {/* Bottom Meta & Action Buttons */}
-                  <div className="mt-5 pt-3 border-t border-neutral-100">
-                    <div className="flex items-center gap-3 text-xs text-neutral-500 mb-3.5 font-normal">
-                      <span>{restaurant.price}</span>
-                      <span className="flex items-center gap-1">
-                        <svg className="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        {restaurant.distance}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setActiveModal(restaurant)}
-                        className="flex-1 border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-800 text-xs font-medium py-2 px-3 rounded-lg flex items-center justify-center gap-1 transition-colors cursor-pointer"
-                      >
-                        <span>View menu</span>
-                        <span className="text-sm">→</span>
-                      </button>
-
-                      <button
-                        onClick={() => toggleSelected(restaurant)}
-                        className={`flex-1 text-xs font-semibold py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
-                          isSelected
-                            ? 'bg-[#F6EEBE] hover:bg-[#ECE3AD] text-neutral-900'
-                            : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-700'
-                        }`}
-                      >
-                        <span>✓</span>
-                        <span>{isSelected ? 'Selected' : 'Select'}</span>
-                      </button>
-                    </div>
                   </div>
                 </div>
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+        )}
       </section>
 
       {/* 4. THE ZAIKA WAY (Burgundy Comparison Section) */}
@@ -406,47 +396,31 @@ export default function HomePage({
               </span>
             </div>
 
-            <div className="border border-neutral-200/90 rounded-xl p-4 mt-4 bg-white hover:border-[#85312C]/40 transition-colors">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h4 className="text-sm font-semibold text-neutral-900">
-                    Saffron Table
-                  </h4>
-                  <p className="text-xs text-neutral-500 mt-0.5">
-                    Paneer tikka · Dal makhani · Naan
-                  </p>
-                </div>
-                <div className="text-right">
-                  <span className="font-serif font-normal text-xl text-[#85312C] leading-none block">
-                    ₹619
-                  </span>
-                  <span className="text-[10px] text-neutral-400 uppercase tracking-wider block mt-0.5">
-                    est. total
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="border border-neutral-200/90 rounded-xl p-4 mt-3 bg-white hover:border-[#85312C]/40 transition-colors">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h4 className="text-sm font-semibold text-neutral-900">
-                    Olive House
-                  </h4>
-                  <p className="text-xs text-neutral-500 mt-0.5">
-                    Margherita · Garlic bread · Coke
-                  </p>
-                </div>
-                <div className="text-right">
-                  <span className="font-serif font-normal text-xl text-[#85312C] leading-none block">
-                    ₹600
-                  </span>
-                  <span className="text-[10px] text-neutral-400 uppercase tracking-wider block mt-0.5">
-                    est. total
-                  </span>
+            {restaurants.slice(0, 2).map((opt) => (
+              <div
+                key={opt.id}
+                className="border border-neutral-200/90 rounded-xl p-4 mt-3 bg-white hover:border-[#85312C]/40 transition-colors"
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h4 className="text-sm font-semibold text-neutral-900">
+                      {opt.name}
+                    </h4>
+                    <p className="text-xs text-neutral-500 mt-0.5">
+                      {opt.sampleDishes}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-serif font-normal text-xl text-[#85312C] leading-none block">
+                      {opt.estimatedPrice}
+                    </span>
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider block mt-0.5">
+                      est. total
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
+            ))}
 
             <div className="flex items-center gap-1.5 text-[#85312C] text-xs font-semibold mt-5">
               <span>★</span>
@@ -458,60 +432,11 @@ export default function HomePage({
 
 
       {/* MODAL: Menu Viewer */}
-      {activeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative border border-neutral-100">
-            <button
-              onClick={() => setActiveModal(null)}
-              className="absolute top-4 right-4 text-neutral-400 hover:text-neutral-700 text-xl font-bold w-8 h-8 rounded-full flex items-center justify-center hover:bg-neutral-100 transition-colors cursor-pointer"
-            >
-              ✕
-            </button>
-
-            <div className="flex items-center gap-4 mb-4">
-              <img
-                src={activeModal.image}
-                alt={activeModal.name}
-                className="w-16 h-16 rounded-xl object-cover"
-              />
-              <div>
-                <h3 className="font-serif text-2xl font-normal text-neutral-900">
-                  {activeModal.name}
-                </h3>
-                <p className="text-xs text-neutral-500">{activeModal.cuisine} · {activeModal.distance}</p>
-              </div>
-            </div>
-
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[#85312C] mb-3">
-              Highlighted Menu
-            </h4>
-
-            <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
-              {activeModal.menu.map((dish, i) => (
-                <div key={i} className="flex items-start justify-between p-3 rounded-xl bg-neutral-50 border border-neutral-100">
-                  <div>
-                    <h5 className="text-sm font-semibold text-neutral-900">{dish.name}</h5>
-                    <p className="text-xs text-neutral-500 mt-0.5">{dish.desc}</p>
-                  </div>
-                  <span className="font-serif font-semibold text-neutral-900 text-sm ml-3">
-                    {dish.price}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-5 pt-4 border-t border-neutral-100 flex items-center justify-between">
-              <span className="text-xs text-neutral-500">Average cost for two: <strong className="text-neutral-900 font-semibold">{activeModal.estimatedPrice}</strong></span>
-              <button
-                onClick={() => setActiveModal(null)}
-                className="bg-[#85312C] text-white text-xs font-medium px-4 py-2 rounded-lg hover:bg-[#702622] transition-colors cursor-pointer"
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <MenuModal
+        isOpen={Boolean(activeModal)}
+        onClose={() => setActiveModal(null)}
+        restaurant={activeModal}
+      />
     </div>
   )
 }
