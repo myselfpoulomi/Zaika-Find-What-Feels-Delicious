@@ -70,12 +70,13 @@ export function ensureRestaurantMenu(restaurant) {
 }
 
 export async function fetchLiveRestaurants({
-  lat = 12.9716,
-  lng = 77.5946,
+  lat = null,
+  lng = null,
   radius = 5000,
-  city = 'Bengaluru',
+  city = '',
   cuisine = ''
 } = {}) {
+  if (!lat || !lng) return []
   try {
     const queryParams = new URLSearchParams({
       lat: lat.toString(),

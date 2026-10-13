@@ -32,7 +32,8 @@ model Preference {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   favoriteCuisine String?  @default("Italian")
   typicalBudget   String?  @default("1500")
-  dietaryPref     String?  @default("Vegetarian")
+  dietaryPref      String?  @default("Vegetarian")
+  selectedLocation Json?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

@@ -3,6 +3,7 @@ import heroBg from '../assets/hero_bg.jpg'
 import LocationPickerModal from '../components/LocationPickerModal'
 import RestaurantDetailsModal from '../components/RestaurantDetailsModal'
 import { ensureRestaurantMenu } from '../services/restaurantService'
+import { getUserLocation, saveUserLocation, DEFAULT_LOCATION } from '../services/locationService'
 
 // Helper function to calculate real geographical distance in km (Haversine formula)
 function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
@@ -23,6 +24,7 @@ function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
 
 export default function DiscoverPage({
   setCurrentPage,
+  currentUser = null,
   initialQuery = '',
   onAddRecentSearch,
   favorites: externalFavorites,
@@ -33,29 +35,20 @@ export default function DiscoverPage({
 }) {
   const [searchQuery, setSearchQuery] = useState(initialQuery)
   const [selectedLocation, setSelectedLocation] = useState(() => {
-    try {
-      const saved = localStorage.getItem('zaika_selected_location')
-      return saved
-        ? JSON.parse(saved)
-        : {
-            name: 'Bengaluru',
-            formattedAddress: 'Bengaluru, Karnataka, India',
-            city: 'Bengaluru',
-            lat: 12.9716,
-            lon: 77.5946,
-            isCurrentLocation: false,
-          }
-    } catch {
-      return {
-        name: 'Bengaluru',
-        formattedAddress: 'Bengaluru, Karnataka, India',
-        city: 'Bengaluru',
-        lat: 12.9716,
-        lon: 77.5946,
-        isCurrentLocation: false,
-      }
-    }
+    return getUserLocation(currentUser?.id)
   })
+
+  // Synchronize location per user whenever user switches or loads
+  useEffect(() => {
+    if (!currentUser?.id) return
+    const userLoc = getUserLocation(currentUser.id)
+    if (userLoc) {
+      setSelectedLocation(userLoc)
+    }
+    if (currentUser.selectedLocation) {
+      setSelectedLocation(currentUser.selectedLocation)
+    }
+  }, [currentUser?.id])
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
   const [cuisineFilter, setCuisineFilter] = useState('All cuisines')
   const [budgetFilter, setBudgetFilter] = useState('Any budget')
@@ -95,7 +88,7 @@ export default function DiscoverPage({
           lat: selectedLocation.lat.toString(),
           lng: selectedLocation.lon.toString(),
           radius: '5000',
-          city: selectedLocation.city || 'Bengaluru',
+          city: selectedLocation.city || '',
         })
         if (cuisineFilter && cuisineFilter !== 'All cuisines') {
           queryParams.set('cuisine', cuisineFilter)
@@ -151,27 +144,28 @@ export default function DiscoverPage({
     return () => {
       isMounted = false
     }
-  }, [selectedLocation.lat, selectedLocation.lon, selectedLocation.city, cuisineFilter])
+  }, [selectedLocation?.lat, selectedLocation?.lon, selectedLocation?.city, cuisineFilter])
 
   // Filter computation with real GPS coordinates & proximity calculation
   const filteredPlaces = useMemo(() => {
     return restaurants.map((item) => {
       // Calculate real distance from currently selected location coordinates
-      const distKm = calculateHaversineDistance(
-        selectedLocation.lat,
-        selectedLocation.lon,
-        item.lat,
-        item.lon
-      )
+      const distKm = (selectedLocation?.lat && selectedLocation?.lon)
+        ? calculateHaversineDistance(
+            selectedLocation.lat,
+            selectedLocation.lon,
+            item.lat,
+            item.lon
+          )
+        : null
 
-      let displayDistance = `${distKm.toFixed(1)} km away`
-      if (distKm < 1.0) {
-        displayDistance = `${Math.round(distKm * 1000)} m away`
-      }
+      let displayDistance = distKm != null
+        ? (distKm < 1.0 ? `${Math.round(distKm * 1000)} m away` : `${distKm.toFixed(1)} km away`)
+        : ''
 
       return {
         ...item,
-        distanceKm: distKm,
+        distanceKm: distKm != null ? distKm : 999,
         displayDistance,
       }
     })
@@ -316,13 +310,17 @@ export default function DiscoverPage({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  {selectedLocation.isCurrentLocation && (
+                  {selectedLocation?.isCurrentLocation && (
                     <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
                   )}
                 </div>
 
-                <span className="font-semibold text-neutral-900 group-hover:text-[#85312C] transition-colors truncate max-w-[140px] sm:max-w-[200px]">
-                  {selectedLocation.name}
+                <span className={`truncate max-w-[140px] sm:max-w-[200px] ${
+                  selectedLocation?.name
+                    ? 'font-semibold text-neutral-900 group-hover:text-[#85312C]'
+                    : 'font-normal text-neutral-400 italic'
+                }`}>
+                  {selectedLocation?.name || 'Set Location 📍'}
                 </span>
               </div>
 
@@ -342,27 +340,31 @@ export default function DiscoverPage({
         </form>
 
         {/* Active Location Indicator Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pb-4 pt-0.5 text-xs text-neutral-500">
-          <div className="flex items-center gap-1.5">
-            <span className="text-neutral-400">Curating spots near:</span>
-            <button
-              type="button"
-              onClick={() => setIsLocationModalOpen(true)}
-              className="inline-flex items-center gap-1.5 bg-[#FAF1E8] hover:bg-[#F4E4D3] text-[#85312C] font-semibold px-2.5 py-1 rounded-full border border-[#85312C]/20 transition-colors cursor-pointer group"
-            >
-              <span>📍 {selectedLocation.name}</span>
-              <span className="text-[11px] text-neutral-500 font-normal">({selectedLocation.city})</span>
-              <span className="text-[10px] text-[#85312C] font-bold group-hover:underline">Change ↗</span>
-            </button>
-          </div>
+        {selectedLocation && selectedLocation.name && (
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-4 pt-0.5 text-xs text-neutral-500">
+            <div className="flex items-center gap-1.5">
+              <span className="text-neutral-400">Curating spots near:</span>
+              <button
+                type="button"
+                onClick={() => setIsLocationModalOpen(true)}
+                className="inline-flex items-center gap-1.5 bg-[#FAF1E8] hover:bg-[#F4E4D3] text-[#85312C] font-semibold px-2.5 py-1 rounded-full border border-[#85312C]/20 transition-colors cursor-pointer group"
+              >
+                <span>📍 {selectedLocation.name}</span>
+                {selectedLocation.city && (
+                  <span className="text-[11px] text-neutral-500 font-normal">({selectedLocation.city})</span>
+                )}
+                <span className="text-[10px] text-[#85312C] font-bold group-hover:underline">Change ↗</span>
+              </button>
+            </div>
 
-          {selectedLocation.isCurrentLocation && (
-            <span className="inline-flex items-center gap-1.5 text-[11px] text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>Live GPS Located</span>
-            </span>
-          )}
-        </div>
+            {selectedLocation.isCurrentLocation && (
+              <span className="inline-flex items-center gap-1.5 text-[11px] text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Live GPS Located</span>
+              </span>
+            )}
+          </div>
+        )}
 
         {/* 3. Filter Controls Row */}
         <div className="flex flex-wrap items-center gap-2.5 pb-6 pt-1 text-xs">
@@ -478,6 +480,26 @@ export default function DiscoverPage({
                 <div className="h-10 bg-neutral-100 rounded-xl w-full"></div>
               </div>
             ))}
+          </div>
+        ) : (!selectedLocation || !selectedLocation.lat) ? (
+          <div className="bg-white rounded-3xl border border-neutral-200/90 p-10 sm:p-14 text-center my-6 max-w-xl mx-auto shadow-xs">
+            <div className="w-16 h-16 rounded-full bg-[#FAF1E8] text-[#85312C] flex items-center justify-center mx-auto mb-4 text-3xl shadow-xs">
+              📍
+            </div>
+            <h3 className="font-serif text-2xl sm:text-3xl font-normal text-neutral-900 mb-2">
+              Where are you dining today?
+            </h3>
+            <p className="text-xs sm:text-sm text-neutral-500 mb-6 leading-relaxed">
+              No location has been selected yet. Pick your city or area on the map to discover live cafes, restaurants, and chef menus around you.
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsLocationModalOpen(true)}
+              className="bg-[#85312C] hover:bg-[#702622] text-white text-sm font-semibold px-6 py-3 rounded-xl shadow-sm transition-all cursor-pointer inline-flex items-center gap-2"
+            >
+              <span>🗺️ Set Location on Map</span>
+              <span>→</span>
+            </button>
           </div>
         ) : filteredPlaces.length === 0 ? (
           <div className="bg-white rounded-2xl border border-neutral-200 p-10 sm:p-14 text-center my-6">
@@ -690,13 +712,10 @@ export default function DiscoverPage({
         isOpen={isLocationModalOpen}
         onClose={() => setIsLocationModalOpen(false)}
         currentLocation={selectedLocation}
+        currentUser={currentUser}
         onSelectLocation={(newLoc) => {
           setSelectedLocation(newLoc)
-          try {
-            localStorage.setItem('zaika_selected_location', JSON.stringify(newLoc))
-          } catch (e) {
-            console.warn(e)
-          }
+          saveUserLocation(currentUser?.id, newLoc)
         }}
       />
 

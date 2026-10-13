@@ -18,6 +18,7 @@ export const SAFE_USER_SELECT = {
       favoriteCuisine: true,
       typicalBudget: true,
       dietaryPref: true,
+      selectedLocation: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -36,6 +37,7 @@ export const formatUserWithPreference = (user) => {
     favoriteCuisine: pref.favoriteCuisine || 'Italian',
     typicalBudget: pref.typicalBudget || '1500',
     dietaryPref: pref.dietaryPref || 'Vegetarian',
+    selectedLocation: pref.selectedLocation || null,
   };
 };
 
@@ -296,9 +298,11 @@ export const updateMyProfile = async (req, res) => {
     const hasPrefUpdate =
       favoriteCuisine !== undefined ||
       typicalBudget !== undefined ||
-      dietaryPref !== undefined;
+      dietaryPref !== undefined ||
+      req.body.selectedLocation !== undefined;
 
     if (hasPrefUpdate) {
+      const selectedLocation = req.body.selectedLocation;
       await prisma.preference.upsert({
         where: { userId: req.user.id },
         create: {
@@ -306,13 +310,28 @@ export const updateMyProfile = async (req, res) => {
           favoriteCuisine: favoriteCuisine || 'Italian',
           typicalBudget: typicalBudget ? String(typicalBudget) : '1500',
           dietaryPref: dietaryPref || 'Vegetarian',
+          selectedLocation: selectedLocation || null,
         },
         update: {
           ...(favoriteCuisine !== undefined && { favoriteCuisine }),
           ...(typicalBudget !== undefined && { typicalBudget: String(typicalBudget) }),
           ...(dietaryPref !== undefined && { dietaryPref }),
+          ...(selectedLocation !== undefined && { selectedLocation }),
         },
       });
+
+      if (selectedLocation) {
+        try {
+          res.cookie('zaika_location', JSON.stringify({ userId: req.user.id, ...selectedLocation }), {
+            maxAge: 30 * 24 * 60 * 60 * 1000,
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production',
+            path: '/',
+          });
+        } catch (e) {
+          console.error(e);
+        }
+      }
     }
 
     // Return the updated user along with preference relation
@@ -460,7 +479,7 @@ export const getUserPreference = async (req, res) => {
  */
 export const updateUserPreference = async (req, res) => {
   try {
-    const { favoriteCuisine, typicalBudget, dietaryPref } = req.body;
+    const { favoriteCuisine, typicalBudget, dietaryPref, selectedLocation } = req.body;
 
     const preference = await prisma.preference.upsert({
       where: { userId: req.user.id },
@@ -469,13 +488,28 @@ export const updateUserPreference = async (req, res) => {
         favoriteCuisine: favoriteCuisine || 'Italian',
         typicalBudget: typicalBudget ? String(typicalBudget) : '1500',
         dietaryPref: dietaryPref || 'Vegetarian',
+        selectedLocation: selectedLocation || null,
       },
       update: {
         ...(favoriteCuisine !== undefined && { favoriteCuisine }),
         ...(typicalBudget !== undefined && { typicalBudget: String(typicalBudget) }),
         ...(dietaryPref !== undefined && { dietaryPref }),
+        ...(selectedLocation !== undefined && { selectedLocation }),
       },
     });
+
+    if (selectedLocation) {
+      try {
+        res.cookie('zaika_location', JSON.stringify({ userId: req.user.id, ...selectedLocation }), {
+          maxAge: 30 * 24 * 60 * 60 * 1000,
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+          path: '/',
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
 
     return res.status(200).json({
       success: true,

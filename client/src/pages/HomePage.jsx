@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import heroBg from '../assets/hero_bg.jpg'
 import { fetchLiveRestaurants } from '../services/restaurantService'
+import { getUserLocation } from '../services/locationService'
 import MenuModal from '../components/MenuModal'
 
 export default function HomePage({
   setCurrentPage,
+  currentUser = null,
   searchQuery: externalSearchQuery,
   setSearchQuery: externalSetSearchQuery,
   onAddRecentSearch,
@@ -48,13 +50,19 @@ export default function HomePage({
   useEffect(() => {
     let isMounted = true
     async function loadPlaces() {
+      const userLoc = getUserLocation(currentUser?.id)
+      if (!userLoc || !userLoc.lat) {
+        setIsLoadingRestaurants(false)
+        return
+      }
+
       setIsLoadingRestaurants(true)
       try {
         const places = await fetchLiveRestaurants({
-          lat: 12.9716,
-          lng: 77.5946,
+          lat: userLoc.lat,
+          lng: userLoc.lon || userLoc.lng,
           radius: 5000,
-          city: 'Bengaluru'
+          city: userLoc.city || ''
         })
         if (isMounted) {
           setRestaurants(places.slice(0, 3))

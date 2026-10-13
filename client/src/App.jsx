@@ -518,6 +518,7 @@ export default function App() {
       {currentPage === 'home' && (
         <HomePage
           setCurrentPage={navigateTo}
+          currentUser={currentUser}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           onAddRecentSearch={handleAddRecentSearch}
@@ -533,6 +534,7 @@ export default function App() {
         currentUser ? (
           <DiscoverPage
             setCurrentPage={navigateTo}
+            currentUser={currentUser}
             initialQuery={searchQuery}
             onAddRecentSearch={handleAddRecentSearch}
             favorites={favorites}
@@ -555,6 +557,7 @@ export default function App() {
         currentUser ? (
           <FavoritesPage
             setCurrentPage={navigateTo}
+            currentUser={currentUser}
             favorites={favorites}
             onToggleFavorite={handleToggleFavorite}
             selectedForCompare={selectedForCompare}

@@ -2204,6 +2204,7 @@ export namespace Prisma {
     favoriteCuisine: number
     typicalBudget: number
     dietaryPref: number
+    selectedLocation: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -2236,6 +2237,7 @@ export namespace Prisma {
     favoriteCuisine?: true
     typicalBudget?: true
     dietaryPref?: true
+    selectedLocation?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -2319,6 +2321,7 @@ export namespace Prisma {
     favoriteCuisine: string | null
     typicalBudget: string | null
     dietaryPref: string | null
+    selectedLocation: JsonValue | null
     createdAt: Date
     updatedAt: Date
     _count: PreferenceCountAggregateOutputType | null
@@ -2346,6 +2349,7 @@ export namespace Prisma {
     favoriteCuisine?: boolean
     typicalBudget?: boolean
     dietaryPref?: boolean
+    selectedLocation?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -2357,6 +2361,7 @@ export namespace Prisma {
     favoriteCuisine?: boolean
     typicalBudget?: boolean
     dietaryPref?: boolean
+    selectedLocation?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -2368,6 +2373,7 @@ export namespace Prisma {
     favoriteCuisine?: boolean
     typicalBudget?: boolean
     dietaryPref?: boolean
+    selectedLocation?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -2379,11 +2385,12 @@ export namespace Prisma {
     favoriteCuisine?: boolean
     typicalBudget?: boolean
     dietaryPref?: boolean
+    selectedLocation?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type PreferenceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "favoriteCuisine" | "typicalBudget" | "dietaryPref" | "createdAt" | "updatedAt", ExtArgs["result"]["preference"]>
+  export type PreferenceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "favoriteCuisine" | "typicalBudget" | "dietaryPref" | "selectedLocation" | "createdAt" | "updatedAt", ExtArgs["result"]["preference"]>
   export type PreferenceInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
   }
@@ -2405,6 +2412,7 @@ export namespace Prisma {
       favoriteCuisine: string | null
       typicalBudget: string | null
       dietaryPref: string | null
+      selectedLocation: Prisma.JsonValue | null
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["preference"]>
@@ -2836,6 +2844,7 @@ export namespace Prisma {
     readonly favoriteCuisine: FieldRef<"Preference", 'String'>
     readonly typicalBudget: FieldRef<"Preference", 'String'>
     readonly dietaryPref: FieldRef<"Preference", 'String'>
+    readonly selectedLocation: FieldRef<"Preference", 'Json'>
     readonly createdAt: FieldRef<"Preference", 'DateTime'>
     readonly updatedAt: FieldRef<"Preference", 'DateTime'>
   }
@@ -4478,6 +4487,7 @@ export namespace Prisma {
     favoriteCuisine: 'favoriteCuisine',
     typicalBudget: 'typicalBudget',
     dietaryPref: 'dietaryPref',
+    selectedLocation: 'selectedLocation',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -4579,20 +4589,6 @@ export namespace Prisma {
 
 
   /**
-   * Reference to a field of type 'Int'
-   */
-  export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
-    
-
-
-  /**
-   * Reference to a field of type 'Int[]'
-   */
-  export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
-    
-
-
-  /**
    * Reference to a field of type 'Json'
    */
   export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
@@ -4603,6 +4599,20 @@ export namespace Prisma {
    * Reference to a field of type 'QueryMode'
    */
   export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+  /**
+   * Reference to a field of type 'Int'
+   */
+  export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
+    
+
+
+  /**
+   * Reference to a field of type 'Int[]'
+   */
+  export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
     
 
 
@@ -4705,6 +4715,7 @@ export namespace Prisma {
     favoriteCuisine?: StringNullableFilter<"Preference"> | string | null
     typicalBudget?: StringNullableFilter<"Preference"> | string | null
     dietaryPref?: StringNullableFilter<"Preference"> | string | null
+    selectedLocation?: JsonNullableFilter<"Preference">
     createdAt?: DateTimeFilter<"Preference"> | Date | string
     updatedAt?: DateTimeFilter<"Preference"> | Date | string
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
@@ -4716,6 +4727,7 @@ export namespace Prisma {
     favoriteCuisine?: SortOrderInput | SortOrder
     typicalBudget?: SortOrderInput | SortOrder
     dietaryPref?: SortOrderInput | SortOrder
+    selectedLocation?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     user?: UserOrderByWithRelationInput
@@ -4730,6 +4742,7 @@ export namespace Prisma {
     favoriteCuisine?: StringNullableFilter<"Preference"> | string | null
     typicalBudget?: StringNullableFilter<"Preference"> | string | null
     dietaryPref?: StringNullableFilter<"Preference"> | string | null
+    selectedLocation?: JsonNullableFilter<"Preference">
     createdAt?: DateTimeFilter<"Preference"> | Date | string
     updatedAt?: DateTimeFilter<"Preference"> | Date | string
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
@@ -4741,6 +4754,7 @@ export namespace Prisma {
     favoriteCuisine?: SortOrderInput | SortOrder
     typicalBudget?: SortOrderInput | SortOrder
     dietaryPref?: SortOrderInput | SortOrder
+    selectedLocation?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: PreferenceCountOrderByAggregateInput
@@ -4757,6 +4771,7 @@ export namespace Prisma {
     favoriteCuisine?: StringNullableWithAggregatesFilter<"Preference"> | string | null
     typicalBudget?: StringNullableWithAggregatesFilter<"Preference"> | string | null
     dietaryPref?: StringNullableWithAggregatesFilter<"Preference"> | string | null
+    selectedLocation?: JsonNullableWithAggregatesFilter<"Preference">
     createdAt?: DateTimeWithAggregatesFilter<"Preference"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Preference"> | Date | string
   }
@@ -4948,6 +4963,7 @@ export namespace Prisma {
     favoriteCuisine?: string | null
     typicalBudget?: string | null
     dietaryPref?: string | null
+    selectedLocation?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     user: UserCreateNestedOneWithoutPreferenceInput
@@ -4959,6 +4975,7 @@ export namespace Prisma {
     favoriteCuisine?: string | null
     typicalBudget?: string | null
     dietaryPref?: string | null
+    selectedLocation?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -4968,6 +4985,7 @@ export namespace Prisma {
     favoriteCuisine?: NullableStringFieldUpdateOperationsInput | string | null
     typicalBudget?: NullableStringFieldUpdateOperationsInput | string | null
     dietaryPref?: NullableStringFieldUpdateOperationsInput | string | null
+    selectedLocation?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     user?: UserUpdateOneRequiredWithoutPreferenceNestedInput
@@ -4979,6 +4997,7 @@ export namespace Prisma {
     favoriteCuisine?: NullableStringFieldUpdateOperationsInput | string | null
     typicalBudget?: NullableStringFieldUpdateOperationsInput | string | null
     dietaryPref?: NullableStringFieldUpdateOperationsInput | string | null
+    selectedLocation?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -4989,6 +5008,7 @@ export namespace Prisma {
     favoriteCuisine?: string | null
     typicalBudget?: string | null
     dietaryPref?: string | null
+    selectedLocation?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -4998,6 +5018,7 @@ export namespace Prisma {
     favoriteCuisine?: NullableStringFieldUpdateOperationsInput | string | null
     typicalBudget?: NullableStringFieldUpdateOperationsInput | string | null
     dietaryPref?: NullableStringFieldUpdateOperationsInput | string | null
+    selectedLocation?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -5008,6 +5029,7 @@ export namespace Prisma {
     favoriteCuisine?: NullableStringFieldUpdateOperationsInput | string | null
     typicalBudget?: NullableStringFieldUpdateOperationsInput | string | null
     dietaryPref?: NullableStringFieldUpdateOperationsInput | string | null
+    selectedLocation?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -5261,6 +5283,29 @@ export namespace Prisma {
     _min?: NestedDateTimeFilter<$PrismaModel>
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
+  export type JsonNullableFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
 
   export type UserScalarRelationFilter = {
     is?: UserWhereInput
@@ -5273,6 +5318,7 @@ export namespace Prisma {
     favoriteCuisine?: SortOrder
     typicalBudget?: SortOrder
     dietaryPref?: SortOrder
+    selectedLocation?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -5296,6 +5342,32 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
+  export type JsonNullableWithAggregatesFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedJsonNullableFilter<$PrismaModel>
+    _max?: NestedJsonNullableFilter<$PrismaModel>
+  }
 
   export type StringNullableListFilter<$PrismaModel = never> = {
     equals?: string[] | ListStringFieldRefInput<$PrismaModel> | null
@@ -5314,29 +5386,6 @@ export namespace Prisma {
     gt?: number | IntFieldRefInput<$PrismaModel>
     gte?: number | IntFieldRefInput<$PrismaModel>
     not?: NestedIntNullableFilter<$PrismaModel> | number | null
-  }
-  export type JsonNullableFilter<$PrismaModel = never> =
-    | PatchUndefined<
-        Either<Required<JsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>,
-        Required<JsonNullableFilterBase<$PrismaModel>>
-      >
-    | OptionalFlat<Omit<Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>
-
-  export type JsonNullableFilterBase<$PrismaModel = never> = {
-    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    path?: string[]
-    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
-    string_contains?: string | StringFieldRefInput<$PrismaModel>
-    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
-    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
-    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
 
   export type ComparisonCountOrderByAggregateInput = {
@@ -5407,32 +5456,6 @@ export namespace Prisma {
     _sum?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedIntNullableFilter<$PrismaModel>
     _max?: NestedIntNullableFilter<$PrismaModel>
-  }
-  export type JsonNullableWithAggregatesFilter<$PrismaModel = never> =
-    | PatchUndefined<
-        Either<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
-        Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>
-      >
-    | OptionalFlat<Omit<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
-
-  export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
-    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    path?: string[]
-    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
-    string_contains?: string | StringFieldRefInput<$PrismaModel>
-    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
-    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
-    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedJsonNullableFilter<$PrismaModel>
-    _max?: NestedJsonNullableFilter<$PrismaModel>
   }
 
   export type PreferenceCreateNestedOneWithoutUserInput = {
@@ -5664,6 +5687,29 @@ export namespace Prisma {
     _min?: NestedDateTimeFilter<$PrismaModel>
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
+  export type NestedJsonNullableFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<NestedJsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<NestedJsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
 
   export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel> | null
@@ -5691,35 +5737,13 @@ export namespace Prisma {
     gte?: number | FloatFieldRefInput<$PrismaModel>
     not?: NestedFloatNullableFilter<$PrismaModel> | number | null
   }
-  export type NestedJsonNullableFilter<$PrismaModel = never> =
-    | PatchUndefined<
-        Either<Required<NestedJsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>,
-        Required<NestedJsonNullableFilterBase<$PrismaModel>>
-      >
-    | OptionalFlat<Omit<Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>
-
-  export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
-    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    path?: string[]
-    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
-    string_contains?: string | StringFieldRefInput<$PrismaModel>
-    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
-    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
-    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-  }
 
   export type PreferenceCreateWithoutUserInput = {
     id?: string
     favoriteCuisine?: string | null
     typicalBudget?: string | null
     dietaryPref?: string | null
+    selectedLocation?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -5729,6 +5753,7 @@ export namespace Prisma {
     favoriteCuisine?: string | null
     typicalBudget?: string | null
     dietaryPref?: string | null
+    selectedLocation?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -5789,6 +5814,7 @@ export namespace Prisma {
     favoriteCuisine?: NullableStringFieldUpdateOperationsInput | string | null
     typicalBudget?: NullableStringFieldUpdateOperationsInput | string | null
     dietaryPref?: NullableStringFieldUpdateOperationsInput | string | null
+    selectedLocation?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -5798,6 +5824,7 @@ export namespace Prisma {
     favoriteCuisine?: NullableStringFieldUpdateOperationsInput | string | null
     typicalBudget?: NullableStringFieldUpdateOperationsInput | string | null
     dietaryPref?: NullableStringFieldUpdateOperationsInput | string | null
+    selectedLocation?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }

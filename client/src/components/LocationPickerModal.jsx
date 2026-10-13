@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import L from 'leaflet'
 import { POPULAR_FOOD_HUBS } from '../constants/locations'
+import { getUserRecentLocations, saveUserRecentLocations } from '../services/locationService'
 
 export default function LocationPickerModal({
   isOpen,
   onClose,
   currentLocation,
   onSelectLocation,
+  currentUser = null,
 }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])
@@ -14,29 +16,27 @@ export default function LocationPickerModal({
   const [isDetectingGps, setIsDetectingGps] = useState(false)
   const [gpsError, setGpsError] = useState('')
 
-  // Selected preview location before confirmation
+  // Selected preview location before confirmation (defaults to null if not set)
   const [previewLocation, setPreviewLocation] = useState(() => {
-    return (
-      currentLocation || {
-        name: 'Bengaluru',
-        formattedAddress: 'Bengaluru, Karnataka, India',
-        city: 'Bengaluru',
-        lat: 12.9716,
-        lon: 77.5946,
-        isCurrentLocation: false,
-      }
-    )
+    return currentLocation || null
   })
 
-  // Recent locations stored in localStorage
-  const [recentLocations, setRecentLocations] = useState(() => {
-    try {
-      const saved = localStorage.getItem('zaika_recent_locations')
-      return saved ? JSON.parse(saved) : []
-    } catch {
-      return []
+  // Synchronize previewLocation when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setPreviewLocation(currentLocation || null)
     }
+  }, [isOpen, currentLocation])
+
+  // Recent locations stored in localStorage per user
+  const [recentLocations, setRecentLocations] = useState(() => {
+    return getUserRecentLocations(currentUser?.id)
   })
+
+  // Synchronize recent locations when currentUser changes
+  useEffect(() => {
+    setRecentLocations(getUserRecentLocations(currentUser?.id))
+  }, [currentUser?.id])
 
   // Leaflet map container ref and map instance ref
   const mapContainerRef = useRef(null)
@@ -69,7 +69,7 @@ export default function LocationPickerModal({
         data.address?.town ||
         data.address?.county ||
         data.address?.state_district ||
-        'Bengaluru'
+        ''
 
       setPreviewLocation({
         name: area,
@@ -93,10 +93,15 @@ export default function LocationPickerModal({
       if (!mapContainerRef.current) return
 
       if (!mapInstanceRef.current) {
-        // Initialize Map
+        // Initialize Map (center on previewLocation if set, else neutral center of India)
+        const centerCoords = previewLocation && previewLocation.lat && previewLocation.lon
+          ? [previewLocation.lat, previewLocation.lon]
+          : [20.5937, 78.9629]
+        const initialZoom = previewLocation?.lat ? 14 : 5
+
         const map = L.map(mapContainerRef.current, {
-          center: [previewLocation.lat, previewLocation.lon],
-          zoom: 14,
+          center: centerCoords,
+          zoom: initialZoom,
           zoomControl: false,
           attributionControl: false,
         })
@@ -122,48 +127,65 @@ export default function LocationPickerModal({
           iconAnchor: [18, 42],
         })
 
-        const marker = L.marker([previewLocation.lat, previewLocation.lon], {
-          icon: customPinIcon,
-          draggable: true,
-        }).addTo(map)
+        if (previewLocation && previewLocation.lat && previewLocation.lon) {
+          const marker = L.marker([previewLocation.lat, previewLocation.lon], {
+            icon: customPinIcon,
+            draggable: true,
+          }).addTo(map)
 
-        // Allow clicking on the map to reposition pin
+          // Drag marker to reposition
+          marker.on('dragend', () => {
+            const pos = marker.getLatLng()
+            reverseGeocode(pos.lat, pos.lng)
+          })
+
+          markerRef.current = marker
+        }
+
+        // Allow clicking on the map to place or reposition pin
         map.on('click', async (e) => {
           const { lat, lng } = e.latlng
-          marker.setLatLng([lat, lng])
+          if (!markerRef.current) {
+            const newMarker = L.marker([lat, lng], {
+              icon: customPinIcon,
+              draggable: true,
+            }).addTo(map)
+            newMarker.on('dragend', () => {
+              const pos = newMarker.getLatLng()
+              reverseGeocode(pos.lat, pos.lng)
+            })
+            markerRef.current = newMarker
+          } else {
+            markerRef.current.setLatLng([lat, lng])
+          }
           reverseGeocode(lat, lng)
         })
 
-        // Drag marker to reposition
-        marker.on('dragend', () => {
-          const pos = marker.getLatLng()
-          reverseGeocode(pos.lat, pos.lng)
-        })
-
         mapInstanceRef.current = map
-        markerRef.current = marker
       } else {
         // Re-center existing map instance
         mapInstanceRef.current.invalidateSize()
-        mapInstanceRef.current.setView([previewLocation.lat, previewLocation.lon], 14)
-        if (markerRef.current) {
-          markerRef.current.setLatLng([previewLocation.lat, previewLocation.lon])
+        if (previewLocation?.lat && previewLocation?.lon) {
+          mapInstanceRef.current.setView([previewLocation.lat, previewLocation.lon], 14)
+          if (markerRef.current) {
+            markerRef.current.setLatLng([previewLocation.lat, previewLocation.lon])
+          }
         }
       }
     }, 120)
 
     return () => clearTimeout(timer)
-  }, [isOpen, previewLocation.lat, previewLocation.lon, reverseGeocode])
+  }, [isOpen, previewLocation?.lat, previewLocation?.lon, reverseGeocode])
 
   // Update map view when preview location changes
   useEffect(() => {
-    if (mapInstanceRef.current && markerRef.current) {
+    if (mapInstanceRef.current && markerRef.current && previewLocation?.lat && previewLocation?.lon) {
       mapInstanceRef.current.flyTo([previewLocation.lat, previewLocation.lon], 15, {
         duration: 1.2,
       })
       markerRef.current.setLatLng([previewLocation.lat, previewLocation.lon])
     }
-  }, [previewLocation.lat, previewLocation.lon])
+  }, [previewLocation?.lat, previewLocation?.lon])
 
   // Clean up Leaflet on modal close
   useEffect(() => {
@@ -398,7 +420,7 @@ export default function LocationPickerModal({
       ].slice(0, 5)
 
       setRecentLocations(updatedRecent)
-      localStorage.setItem('zaika_recent_locations', JSON.stringify(updatedRecent))
+      saveUserRecentLocations(currentUser?.id, updatedRecent)
     } catch (e) {
       console.warn(e)
     }
@@ -588,13 +610,17 @@ export default function LocationPickerModal({
               <div ref={mapContainerRef} className="w-full h-full" />
 
               {/* Floating Map Overlay Badge */}
-              <div className="absolute top-3 left-3 z-1000 bg-white/95 backdrop-blur-xs px-3 py-1.5 rounded-xl shadow-md border border-neutral-200/80 text-xs flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span className="font-semibold text-neutral-800">
-                  {previewLocation.name}
-                </span>
-                <span className="text-neutral-400">({previewLocation.city})</span>
-              </div>
+              {previewLocation && previewLocation.name && (
+                <div className="absolute top-3 left-3 z-1000 bg-white/95 backdrop-blur-xs px-3 py-1.5 rounded-xl shadow-md border border-neutral-200/80 text-xs flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span className="font-semibold text-neutral-800">
+                    {previewLocation.name}
+                  </span>
+                  {previewLocation.city && (
+                    <span className="text-neutral-400">({previewLocation.city})</span>
+                  )}
+                </div>
+              )}
 
               {/* Re-center GPS button on Map */}
               <button
@@ -627,18 +653,33 @@ export default function LocationPickerModal({
               Selected Location
             </span>
             <div className="flex items-center gap-1.5">
-              <span className="text-sm font-semibold text-neutral-900 truncate">
-                {previewLocation.name}
-              </span>
-              <span className="text-xs text-neutral-500 truncate">
-                ({previewLocation.city})
-              </span>
+              {previewLocation && previewLocation.name ? (
+                <>
+                  <span className="text-sm font-semibold text-neutral-900 truncate">
+                    {previewLocation.name}
+                  </span>
+                  {previewLocation.city && (
+                    <span className="text-xs text-neutral-500 truncate">
+                      ({previewLocation.city})
+                    </span>
+                  )}
+                </>
+              ) : (
+                <span className="text-xs text-neutral-400 italic">
+                  Search a place or click on the map to drop a pin
+                </span>
+              )}
             </div>
           </div>
 
           <button
+            disabled={!previewLocation || !previewLocation.lat}
             onClick={handleConfirmLocation}
-            className="bg-[#85312C] hover:bg-[#702622] text-white px-5 sm:px-6 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm cursor-pointer shrink-0 flex items-center gap-2"
+            className={`px-5 sm:px-6 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm flex items-center gap-2 shrink-0 ${
+              previewLocation && previewLocation.lat
+                ? 'bg-[#85312C] hover:bg-[#702622] text-white cursor-pointer'
+                : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+            }`}
           >
             <span>Confirm Location</span>
             <span>→</span>

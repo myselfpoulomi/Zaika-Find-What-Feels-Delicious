@@ -138,6 +138,7 @@ exports.Prisma.PreferenceScalarFieldEnum = {
   favoriteCuisine: 'favoriteCuisine',
   typicalBudget: 'typicalBudget',
   dietaryPref: 'dietaryPref',
+  selectedLocation: 'selectedLocation',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };

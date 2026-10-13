@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { fetchLiveRestaurants, ensureRestaurantMenu, fetchAiComparison } from '../services/restaurantService'
 import MenuModal from '../components/MenuModal'
 import { getCompareCookie, fetchUserCompare, saveUserCompare } from '../services/compareService'
+import { getUserLocation } from '../services/locationService'
 
 export default function ComparePage({
   setCurrentPage,
@@ -70,20 +71,17 @@ export default function ComparePage({
 
     let isMounted = true
     async function loadPlaces() {
-      // Get location from localStorage (same as DiscoverPage)
-      let targetLoc = { lat: 12.9716, lng: 77.5946, city: 'Bengaluru' }
-      try {
-        const savedLoc = localStorage.getItem('zaika_selected_location')
-        if (savedLoc) {
-          const parsed = JSON.parse(savedLoc)
-          targetLoc = {
-            lat: parsed.lat || 12.9716,
-            lng: parsed.lon || parsed.lng || 77.5946,
-            city: parsed.city || 'Bengaluru'
-          }
-        }
-      } catch (e) {
-        console.warn(e)
+      // Get location scoped specifically for this user
+      const userLoc = getUserLocation(currentUser?.id)
+      if (!userLoc || !userLoc.lat) {
+        setIsLoadingPlaces(false)
+        return
+      }
+
+      const targetLoc = {
+        lat: userLoc.lat,
+        lng: userLoc.lon || userLoc.lng,
+        city: userLoc.city || ''
       }
 
       setIsLoadingPlaces(true)
