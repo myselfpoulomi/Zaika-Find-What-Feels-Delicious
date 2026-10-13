@@ -7,6 +7,7 @@ import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import preferenceRoutes from "./routes/preference.routes.js";
 import restaurantRoutes from "./routes/restaurant.routes.js";
+import compareRoutes from "./routes/compare.routes.js";
 
 // Load environment variables
 dotenv.config();
@@ -48,6 +49,7 @@ app.use("/api/profile", userRoutes);
 app.use("/api/preferences", preferenceRoutes);
 app.use("/api/preference", preferenceRoutes);
 app.use("/api/restaurants", restaurantRoutes);
+app.use("/api/compare", compareRoutes);
 
 // Root Route
 app.get("/", (req, res) => {

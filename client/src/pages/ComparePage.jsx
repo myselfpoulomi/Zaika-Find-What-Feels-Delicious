@@ -1,9 +1,11 @@
 import { useState, useMemo, useEffect } from 'react'
 import { fetchLiveRestaurants, ensureRestaurantMenu, fetchAiComparison } from '../services/restaurantService'
 import MenuModal from '../components/MenuModal'
+import { getCompareCookie, fetchUserCompare, saveUserCompare } from '../services/compareService'
 
 export default function ComparePage({
   setCurrentPage,
+  currentUser = null,
   selectedForCompare = {},
   onToggleCompare,
   onClearCompare,
@@ -167,6 +169,49 @@ export default function ComparePage({
   const [extraDishes, setExtraDishes] = useState({})
   // Custom dish quantities: { [`${restaurantId}_${dishName}`]: number }
   const [dishQuantities, setDishQuantities] = useState({})
+
+  // Load saved compare plan from database & cookie for this user
+  useEffect(() => {
+    if (!currentUser?.id) return
+
+    let isMounted = true
+
+    // Quick initial read from cookie
+    const cookie = getCompareCookie()
+    if (cookie && cookie.userId === currentUser.id) {
+      if (cookie.budget) setBudget(cookie.budget)
+      if (cookie.people) setPeople(cookie.people)
+      if (cookie.cuisine) setCuisine(cookie.cuisine)
+      if (cookie.dietary) setDietary(cookie.dietary)
+      if (cookie.drinksInput !== undefined) setDrinksInput(cookie.drinksInput)
+      if (cookie.craving !== undefined) setCraving(cookie.craving)
+      if (cookie.anythingElse !== undefined) setAnythingElse(cookie.anythingElse)
+      if (cookie.dishQuantities && typeof cookie.dishQuantities === 'object') {
+        setDishQuantities(cookie.dishQuantities)
+      }
+    }
+
+    // Fetch synced data from database
+    fetchUserCompare()
+      .then((data) => {
+        if (!isMounted || !data) return
+        if (data.budget) setBudget(data.budget)
+        if (data.people) setPeople(data.people)
+        if (data.cuisine) setCuisine(data.cuisine)
+        if (data.dietary) setDietary(data.dietary)
+        if (data.drinksInput !== undefined) setDrinksInput(data.drinksInput)
+        if (data.craving !== undefined) setCraving(data.craving)
+        if (data.anythingElse !== undefined) setAnythingElse(data.anythingElse)
+        if (data.dishQuantities && typeof data.dishQuantities === 'object') {
+          setDishQuantities(data.dishQuantities)
+        }
+      })
+      .catch((err) => console.warn('Compare plan load error:', err))
+
+    return () => {
+      isMounted = false
+    }
+  }, [currentUser?.id])
 
   // Category filter in Step 2
   const [placeFilter, setPlaceFilter] = useState('All')
@@ -549,6 +594,20 @@ export default function ComparePage({
   ], [cuisine, dietary, craving, people, budget])
 
   const triggerAiComparisonAnimation = () => {
+    if (currentUser?.id) {
+      saveUserCompare({
+        userId: currentUser.id,
+        restaurantIds: selectedIds,
+        budget,
+        people,
+        cuisine,
+        dietary,
+        drinksInput,
+        craving,
+        anythingElse,
+        dishQuantities,
+      }).catch((err) => console.warn('Save compare error:', err))
+    }
     setIsAiComparingAnimation(true)
     setAiProgress(15)
     setAnalysisMessageIndex(0)

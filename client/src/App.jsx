@@ -9,6 +9,13 @@ import DiscoverPage from './pages/DiscoverPage'
 import FavoritesPage from './pages/FavoritesPage'
 import ComparePage from './pages/ComparePage'
 import { getCurrentUser, logoutUser } from './services/auth'
+import {
+  getCompareCookie,
+  fetchUserCompare,
+  saveUserCompare,
+  clearUserCompare,
+  removeCompareCookie,
+} from './services/compareService'
 
 const PROTECTED_PAGES = ['discover', 'compare', 'favorites', 'profile']
 
@@ -74,19 +81,81 @@ export default function App() {
 
   const [selectedForCompare, setSelectedForCompare] = useState(() => {
     try {
-      const saved = localStorage.getItem('zaika_selected_for_compare')
-      const parsed = saved ? JSON.parse(saved) : {}
-      const cleaned = {}
-      for (const [k, v] of Object.entries(parsed)) {
-        if (!['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].includes(String(k))) {
-          cleaned[k] = v
+      const savedUser = localStorage.getItem('zaika_user')
+      const user = savedUser ? JSON.parse(savedUser) : null
+      if (user?.id) {
+        const cookie = getCompareCookie()
+        if (cookie && cookie.userId === user.id && Array.isArray(cookie.restaurantIds)) {
+          const map = {}
+          cookie.restaurantIds.forEach((id) => {
+            map[id] = true
+          })
+          return map
         }
+        const saved = localStorage.getItem(`zaika_selected_for_compare_${user.id}`)
+        return saved ? JSON.parse(saved) : {}
       }
-      return cleaned
+      return {}
     } catch {
       return {}
     }
   })
+
+  // Synchronize compare list per-user from database & cookie
+  useEffect(() => {
+    if (!currentUser?.id) {
+      setSelectedForCompare({})
+      return
+    }
+
+    let isMounted = true
+
+    // Check cookie first
+    const cookie = getCompareCookie()
+    if (cookie && cookie.userId === currentUser.id && Array.isArray(cookie.restaurantIds)) {
+      const map = {}
+      cookie.restaurantIds.forEach((id) => {
+        map[id] = true
+      })
+      setSelectedForCompare(map)
+    } else {
+      try {
+        const saved = localStorage.getItem(`zaika_selected_for_compare_${currentUser.id}`)
+        if (saved) {
+          setSelectedForCompare(JSON.parse(saved))
+        } else {
+          setSelectedForCompare({})
+        }
+      } catch {
+        setSelectedForCompare({})
+      }
+    }
+
+    // Fetch latest from database
+    fetchUserCompare()
+      .then((data) => {
+        if (!isMounted || !data) return
+        if (Array.isArray(data.restaurantIds)) {
+          const map = {}
+          data.restaurantIds.forEach((id) => {
+            map[id] = true
+          })
+          setSelectedForCompare(map)
+          try {
+            localStorage.setItem(`zaika_selected_for_compare_${currentUser.id}`, JSON.stringify(map))
+          } catch (e) {
+            console.error(e)
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn('Sync user compare error:', err)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [currentUser?.id])
 
   const [customRestaurants, setCustomRestaurants] = useState(() => {
     try {
@@ -231,14 +300,35 @@ export default function App() {
 
   const handleToggleCompare = (id, restaurantObj = null) => {
     setSelectedForCompare((prev) => {
-      const updated = { ...prev, [id]: !prev[id] }
-      try {
-        localStorage.setItem('zaika_selected_for_compare', JSON.stringify(updated))
-      } catch (e) {
-        console.error(e)
+      const isCurrentlySelected = !!prev[id]
+      const updated = { ...prev }
+      if (isCurrentlySelected) {
+        delete updated[id]
+      } else {
+        const count = Object.values(updated).filter(Boolean).length
+        if (count >= 4) {
+          alert('You can compare a maximum of 4 restaurants at a time.')
+          return prev
+        }
+        updated[id] = true
       }
+
+      if (currentUser?.id) {
+        const ids = Object.keys(updated).filter((k) => updated[k])
+        try {
+          localStorage.setItem(`zaika_selected_for_compare_${currentUser.id}`, JSON.stringify(updated))
+        } catch (e) {
+          console.error(e)
+        }
+        saveUserCompare({
+          userId: currentUser.id,
+          restaurantIds: ids,
+        }).catch((err) => console.warn('Save compare error:', err))
+      }
+
       return updated
     })
+
     if (restaurantObj) {
       setCustomRestaurants((prev) => {
         const updated = { ...prev, [id]: restaurantObj }
@@ -254,10 +344,13 @@ export default function App() {
 
   const handleClearCompare = () => {
     setSelectedForCompare({})
-    try {
-      localStorage.setItem('zaika_selected_for_compare', JSON.stringify({}))
-    } catch (e) {
-      console.error(e)
+    if (currentUser?.id) {
+      try {
+        localStorage.removeItem(`zaika_selected_for_compare_${currentUser.id}`)
+      } catch (e) {
+        console.error(e)
+      }
+      clearUserCompare().catch((err) => console.warn('Clear compare error:', err))
     }
   }
 
@@ -302,6 +395,29 @@ export default function App() {
     } catch (e) {
       console.error(e)
     }
+
+    if (user?.id) {
+      const cookie = getCompareCookie()
+      if (cookie && cookie.userId === user.id && Array.isArray(cookie.restaurantIds)) {
+        const map = {}
+        cookie.restaurantIds.forEach((id) => {
+          map[id] = true
+        })
+        setSelectedForCompare(map)
+      } else {
+        try {
+          const local = localStorage.getItem(`zaika_selected_for_compare_${user.id}`)
+          if (local) {
+            setSelectedForCompare(JSON.parse(local))
+          } else {
+            setSelectedForCompare({})
+          }
+        } catch {
+          setSelectedForCompare({})
+        }
+      }
+    }
+
     const destination = redirectAfterLogin || 'home'
     setRedirectAfterLogin(null)
     setAuthNotice('')
@@ -378,6 +494,8 @@ export default function App() {
       console.error('Logout error:', e)
     }
     setCurrentUser(null)
+    setSelectedForCompare({})
+    removeCompareCookie()
     try {
       localStorage.removeItem('zaika_user')
     } catch (e) {
@@ -457,6 +575,7 @@ export default function App() {
         currentUser ? (
           <ComparePage
             setCurrentPage={navigateTo}
+            currentUser={currentUser}
             selectedForCompare={selectedForCompare}
             onToggleCompare={handleToggleCompare}
             onClearCompare={handleClearCompare}

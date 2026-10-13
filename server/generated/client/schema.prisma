@@ -1,0 +1,59 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  passwordHash String
+  name         String
+  phone        String?
+  bio          String?
+  preference   Preference?
+  comparison   Comparison?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@map("users")
+}
+
+model Preference {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  favoriteCuisine String?  @default("Italian")
+  typicalBudget   String?  @default("1500")
+  dietaryPref     String?  @default("Vegetarian")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("preferences")
+}
+
+model Comparison {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurantIds  String[] @default([])
+  budget         Int?     @default(1500)
+  people         Int?     @default(2)
+  cuisine        String?  @default("Any cuisine")
+  dietary        String?  @default("Vegetarian")
+  drinksInput    String?  @default("")
+  craving        String?  @default("")
+  anythingElse   String?  @default("Something filling, not too expensive.")
+  dishQuantities Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("comparisons")
+}
