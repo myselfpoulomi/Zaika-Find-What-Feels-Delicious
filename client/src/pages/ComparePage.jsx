@@ -14,7 +14,9 @@ export default function ComparePage({
   favorites = {},
   onToggleFavorite,
   discoveredRestaurants = [],
-  onUpdateDiscoveredRestaurants
+  onUpdateDiscoveredRestaurants,
+  lastComparison = null,
+  onSaveLastComparison
 }) {
   // Step in the compare wizard: 1 = Your plans, 2 = Pick places (redirects to Discover), 3 = Compare menus
   const [currentStep, setCurrentStep] = useState(1)
@@ -592,6 +594,40 @@ export default function ComparePage({
   ], [cuisine, dietary, craving, people, budget])
 
   const triggerAiComparisonAnimation = () => {
+    // Snapshot the comparison for the Home page hero card
+    if (compareList.length >= 2) {
+      try {
+        const snapshot = {
+          comparedAt: new Date().toISOString(),
+          budget,
+          people,
+          cuisine,
+          dietary,
+          restaurants: compareList.map((r) => {
+            const bill = calculateBill(r)
+            const dishesSummary = bill.activeDishes.length > 0
+              ? bill.activeDishes.map((d) => d.name).slice(0, 3).join(', ')
+              : (r.sampleDishes || r.cuisine || 'Curated meal plan')
+            return {
+              id: r.id,
+              name: r.name,
+              cuisine: r.cuisine || '',
+              sampleDishes: dishesSummary,
+              estimatedPrice: `₹${bill.total.toLocaleString()}`,
+              rating: r.rating || 4.5,
+              offer: r.offer || null,
+              image: r.image || null,
+            }
+          }),
+        }
+        if (onSaveLastComparison) {
+          onSaveLastComparison(snapshot)
+        }
+      } catch (err) {
+        console.warn('Snapshot error:', err)
+      }
+    }
+
     if (currentUser?.id) {
       saveUserCompare({
         userId: currentUser.id,
@@ -650,6 +686,37 @@ export default function ComparePage({
       setIsAiComparingAnimation(true)
       setAiProgress(15)
       setAnalysisMessageIndex(0)
+
+      try {
+        const snapshot = {
+          comparedAt: new Date().toISOString(),
+          budget,
+          people,
+          cuisine,
+          dietary,
+          restaurants: compareList.map((r) => {
+            const bill = calculateBill(r)
+            const dishesSummary = bill.activeDishes.length > 0
+              ? bill.activeDishes.map((d) => d.name).slice(0, 3).join(', ')
+              : (r.sampleDishes || r.cuisine || 'Curated meal plan')
+            return {
+              id: r.id,
+              name: r.name,
+              cuisine: r.cuisine || '',
+              sampleDishes: dishesSummary,
+              estimatedPrice: `₹${bill.total.toLocaleString()}`,
+              rating: r.rating || 4.5,
+              offer: r.offer || null,
+              image: r.image || null,
+            }
+          }),
+        }
+        if (onSaveLastComparison) {
+          onSaveLastComparison(snapshot)
+        }
+      } catch (err) {
+        console.warn('Snapshot step 3 error:', err)
+      }
     }
   }, [currentStep, compareList.length, hasRunInitialAiAnimation])
 
@@ -759,7 +826,8 @@ export default function ComparePage({
                 if (selectedIds.length >= 2) {
                   setCurrentStep(3)
                 } else {
-                  alert('Please select at least 2 restaurants in Step 2 to compare menus.')
+                  alert('Please select at least 2 restaurants from Discover to compare menus.')
+                  if (setCurrentPage) setCurrentPage('discover')
                 }
               }}
               className="flex items-center gap-2.5 transition-colors cursor-pointer group"
@@ -809,8 +877,45 @@ export default function ComparePage({
               </p>
             </div>
 
-            {/* If user already picked restaurants from Discover */}
-            {chosenRestaurants.length > 0 && (
+            {/* If user needs to choose places again */}
+            {chosenRestaurants.length < 2 ? (
+              <div className="bg-[#FAF1E8] border border-[#F0DFD0] rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-5 shadow-2xs">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-white border border-[#E8D4C0] text-[#85312C] flex items-center justify-center shrink-0 text-xl shadow-2xs font-serif font-bold">
+                    {chosenRestaurants.length}/2
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-bold tracking-wider uppercase text-[#85312C] block mb-1">
+                      Choose Places to Compare
+                    </span>
+                    <h3 className="font-serif text-lg text-neutral-900 font-medium">
+                      {chosenRestaurants.length === 0
+                        ? 'Please select at least 2 places from Discover'
+                        : `1 place chosen ("${chosenRestaurants[0]?.name}"). Pick 1 more place to compare`}
+                    </h3>
+                    <p className="text-xs text-neutral-600 mt-1 max-w-xl leading-relaxed">
+                      {chosenRestaurants.length === 0
+                        ? 'You haven’t selected places for today’s comparison yet. Browse your local spots in Discover to compare real menus, pricing, and AI bill estimates.'
+                        : 'Side-by-side comparison requires at least 2 restaurants. Head back to Discover to add another spot.'}
+                      {lastComparison?.restaurants?.length > 0 && (
+                        <span className="block text-neutral-500 font-medium mt-1">
+                          💡 Your previously compared menu is archived and displayed on the Home page.
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage && setCurrentPage('discover')}
+                  className="bg-[#85312C] hover:bg-[#702622] text-white text-xs sm:text-sm font-semibold py-2.5 px-4 rounded-xl transition-colors cursor-pointer shadow-xs whitespace-nowrap self-start sm:self-auto flex items-center gap-2"
+                >
+                  <span>Choose places in Discover</span>
+                  <span>↗</span>
+                </button>
+              </div>
+            ) : (
               <div className="bg-[#FAF1E8] border border-[#F0DFD0] rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
                 <div className="flex items-center gap-3.5">
                   <div className="w-10 h-10 rounded-xl bg-white border border-[#E8D4C0] text-[#85312C] font-serif font-bold text-lg flex items-center justify-center shrink-0 shadow-2xs">
@@ -837,17 +942,15 @@ export default function ComparePage({
                   >
                     Change in Discover ↗
                   </button>
-                  {chosenRestaurants.length >= 2 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        triggerAiComparisonAnimation()
-                      }}
-                      className="bg-[#85312C] hover:bg-[#702622] text-white text-xs font-semibold py-2 px-3.5 rounded-lg transition-colors cursor-pointer shadow-2xs"
-                    >
-                      Skip to Compare →
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerAiComparisonAnimation()
+                    }}
+                    className="bg-[#85312C] hover:bg-[#702622] text-white text-xs font-semibold py-2 px-3.5 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                  >
+                    Skip to Compare →
+                  </button>
                 </div>
               </div>
             )}
@@ -1082,24 +1185,6 @@ export default function ComparePage({
                   <span>↗</span>
                 </button>
 
-                {chosenRestaurants.length < 2 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      // Pick top 2 matches if none selected
-                      if (selectedIds.length < 2) {
-                        const top2 = scoredRestaurants.slice(0, 2).map((r) => r.id)
-                        setSelectedIds(top2)
-                      }
-                      triggerAiComparisonAnimation()
-                    }}
-                    className="border border-[#85312C] text-[#85312C] hover:bg-[#FAF1E8] text-sm font-semibold py-2.5 px-4 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-                  >
-                    <span>Quick AI Compare</span>
-                    <span className="text-xs">⚡</span>
-                  </button>
-                )}
-
                 {chosenRestaurants.length >= 2 ? (
                   <button
                     type="button"
@@ -1123,7 +1208,7 @@ export default function ComparePage({
                   >
                     <span>Pick places in Discover ({chosenRestaurants.length}/2)</span>
                     <span className="text-base leading-none transition-transform group-hover:translate-x-0.5">
-                      →
+                      ↗
                     </span>
                   </button>
                 )}

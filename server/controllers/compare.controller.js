@@ -18,6 +18,7 @@ const setCompareCookie = (res, data, userId) => {
       craving: data.craving || '',
       anythingElse: data.anythingElse || '',
       dishQuantities: data.dishQuantities || {},
+      lastComparison: data.lastComparison || null,
       updatedAt: new Date().toISOString(),
     });
 
@@ -60,12 +61,12 @@ export const getComparison = async (req, res) => {
         // Ignore cookie parse error
       }
 
-      if (cookieData && Array.isArray(cookieData.restaurantIds) && cookieData.restaurantIds.length > 0) {
+      if (cookieData && (Array.isArray(cookieData.restaurantIds) || cookieData.lastComparison)) {
         // Persist cookie data to DB
         comparison = await prisma.comparison.create({
           data: {
             userId,
-            restaurantIds: cookieData.restaurantIds,
+            restaurantIds: cookieData.restaurantIds || [],
             budget: cookieData.budget ?? 1500,
             people: cookieData.people ?? 2,
             cuisine: cookieData.cuisine || 'Any cuisine',
@@ -74,6 +75,7 @@ export const getComparison = async (req, res) => {
             craving: cookieData.craving || '',
             anythingElse: cookieData.anythingElse || 'Something filling, not too expensive.',
             dishQuantities: cookieData.dishQuantities || {},
+            lastComparison: cookieData.lastComparison || null,
           },
         });
       } else {
@@ -89,6 +91,7 @@ export const getComparison = async (req, res) => {
           craving: '',
           anythingElse: 'Something filling, not too expensive.',
           dishQuantities: {},
+          lastComparison: null,
         };
       }
     }
@@ -126,34 +129,34 @@ export const saveComparison = async (req, res) => {
       craving = '',
       anythingElse = 'Something filling, not too expensive.',
       dishQuantities = {},
+      lastComparison,
     } = req.body;
 
     const cleanRestaurantIds = Array.isArray(restaurantIds) ? restaurantIds.map(String) : [];
 
+    const updateData = {
+      restaurantIds: cleanRestaurantIds,
+      budget: Number(budget) || 1500,
+      people: Number(people) || 2,
+      cuisine: String(cuisine || 'Any cuisine'),
+      dietary: String(dietary || 'Vegetarian'),
+      drinksInput: String(drinksInput || ''),
+      craving: String(craving || ''),
+      anythingElse: String(anythingElse || ''),
+      dishQuantities: dishQuantities && typeof dishQuantities === 'object' ? dishQuantities : {},
+    };
+
+    if (lastComparison !== undefined) {
+      updateData.lastComparison = lastComparison;
+    }
+
     const updatedComparison = await prisma.comparison.upsert({
       where: { userId },
-      update: {
-        restaurantIds: cleanRestaurantIds,
-        budget: Number(budget) || 1500,
-        people: Number(people) || 2,
-        cuisine: String(cuisine || 'Any cuisine'),
-        dietary: String(dietary || 'Vegetarian'),
-        drinksInput: String(drinksInput || ''),
-        craving: String(craving || ''),
-        anythingElse: String(anythingElse || ''),
-        dishQuantities: dishQuantities && typeof dishQuantities === 'object' ? dishQuantities : {},
-      },
+      update: updateData,
       create: {
         userId,
-        restaurantIds: cleanRestaurantIds,
-        budget: Number(budget) || 1500,
-        people: Number(people) || 2,
-        cuisine: String(cuisine || 'Any cuisine'),
-        dietary: String(dietary || 'Vegetarian'),
-        drinksInput: String(drinksInput || ''),
-        craving: String(craving || ''),
-        anythingElse: String(anythingElse || ''),
-        dishQuantities: dishQuantities && typeof dishQuantities === 'object' ? dishQuantities : {},
+        ...updateData,
+        lastComparison: lastComparison || null,
       },
     });
 
@@ -176,14 +179,18 @@ export const saveComparison = async (req, res) => {
 
 /**
  * DELETE /api/compare
- * Clear comparison data for current user in DB and clear cookie
+ * Clear active comparison places for current user in DB and Cookie,
+ * while preserving historical lastComparison for the Home page hero recap
  */
 export const clearComparison = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Reset in DB if exists
-    await prisma.comparison.upsert({
+    const existing = await prisma.comparison.findUnique({
+      where: { userId },
+    });
+
+    const updatedComparison = await prisma.comparison.upsert({
       where: { userId },
       update: {
         restaurantIds: [],
@@ -193,19 +200,17 @@ export const clearComparison = async (req, res) => {
         userId,
         restaurantIds: [],
         dishQuantities: {},
+        lastComparison: existing?.lastComparison || null,
       },
     });
 
-    // Clear cookie
-    res.clearCookie(COOKIE_COMPARE_NAME, {
-      path: '/',
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-    });
+    // Sync cookie with empty restaurantIds but preserve lastComparison
+    setCompareCookie(res, updatedComparison, userId);
 
     return res.status(200).json({
       success: true,
-      message: 'Comparison list cleared successfully.',
+      message: 'Active comparison places cleared successfully.',
+      data: updatedComparison,
     });
   } catch (error) {
     console.error('Clear Comparison Error:', error);

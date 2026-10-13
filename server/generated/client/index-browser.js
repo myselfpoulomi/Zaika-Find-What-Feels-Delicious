@@ -155,6 +155,7 @@ exports.Prisma.ComparisonScalarFieldEnum = {
   craving: 'craving',
   anythingElse: 'anythingElse',
   dishQuantities: 'dishQuantities',
+  lastComparison: 'lastComparison',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };

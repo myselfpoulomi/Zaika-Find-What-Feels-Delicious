@@ -53,6 +53,7 @@ model Comparison {
   craving        String?  @default("")
   anythingElse   String?  @default("Something filling, not too expensive.")
   dishQuantities Json?
+  lastComparison Json?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

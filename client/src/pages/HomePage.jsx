@@ -13,7 +13,8 @@ export default function HomePage({
   favorites: externalFavorites,
   onToggleFavorite: externalOnToggleFavorite,
   selectedForCompare: externalSelectedForCompare,
-  onToggleCompare: externalOnToggleCompare
+  onToggleCompare: externalOnToggleCompare,
+  lastComparison = null
 }) {
   const [internalSearchQuery, setInternalSearchQuery] = useState('')
   const searchQuery = externalSearchQuery !== undefined ? externalSearchQuery : internalSearchQuery
@@ -394,43 +395,134 @@ export default function HomePage({
           </div>
 
           {/* Right Comparison Card */}
-          <div className="bg-white text-neutral-900 rounded-2xl p-6 md:p-7 shadow-2xl max-w-md w-full ml-auto">
+          <div className="bg-white text-neutral-900 rounded-2xl p-6 md:p-7 shadow-2xl max-w-md w-full ml-auto border border-neutral-100">
             <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
-              <span className="text-sm font-semibold text-neutral-900">
-                Tonight's options
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-neutral-900">
+                  {lastComparison?.restaurants?.length > 0 ? "Previously compared menu" : "Tonight's options"}
+                </span>
+                {lastComparison?.restaurants?.length > 0 && (
+                  <span className="bg-[#FAF1E8] text-[#85312C] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#F3E2D4]">
+                    Last comparison
+                  </span>
+                )}
+              </div>
               <span className="text-xs text-neutral-500 font-normal">
-                For 2 people · under ₹1,500
+                {lastComparison
+                  ? `For ${lastComparison.people || 2} · under ₹${(lastComparison.budget || 1500).toLocaleString()}`
+                  : 'For 2 people · under ₹1,500'}
               </span>
             </div>
 
-            {restaurants.slice(0, 2).map((opt) => (
-              <div
-                key={opt.id}
-                className="border border-neutral-200/90 rounded-xl p-4 mt-3 bg-white hover:border-[#85312C]/40 transition-colors"
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h4 className="text-sm font-semibold text-neutral-900">
-                      {opt.name}
-                    </h4>
-                    <p className="text-xs text-neutral-500 mt-0.5">
-                      {opt.sampleDishes}
-                    </p>
+            {lastComparison?.restaurants?.length > 0 ? (
+              <div className="space-y-3 mt-3">
+                {lastComparison.restaurants.slice(0, 3).map((opt) => (
+                  <div
+                    key={opt.id}
+                    className="border border-neutral-200/90 rounded-xl p-3.5 bg-neutral-50/50 hover:bg-white hover:border-[#85312C]/40 transition-all shadow-2xs"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="text-sm font-semibold text-neutral-900 truncate">
+                            {opt.name}
+                          </h4>
+                          {opt.rating && (
+                            <span className="text-[11px] text-amber-600 font-medium shrink-0">
+                              ★{opt.rating}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-neutral-500 mt-1 line-clamp-1">
+                          {opt.sampleDishes || opt.cuisine || 'Curated meal plan'}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="font-serif font-medium text-lg text-[#85312C] leading-none block">
+                          {opt.estimatedPrice || '₹1,200'}
+                        </span>
+                        <span className="text-[10px] text-neutral-400 uppercase tracking-wider block mt-0.5">
+                          est. total
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className="font-serif font-normal text-xl text-[#85312C] leading-none block">
-                      {opt.estimatedPrice}
-                    </span>
-                    <span className="text-[10px] text-neutral-400 uppercase tracking-wider block mt-0.5">
-                      est. total
-                    </span>
-                  </div>
+                ))}
+
+                <div className="pt-2 flex items-center justify-between">
+                  <button
+                    onClick={() => setCurrentPage('discover')}
+                    className="text-xs text-[#85312C] font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>Pick new places in Discover</span>
+                    <span>→</span>
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage('compare')}
+                    className="text-xs bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-medium px-2.5 py-1 rounded-md transition-colors cursor-pointer"
+                  >
+                    Plan new comparison
+                  </button>
                 </div>
               </div>
-            ))}
+            ) : restaurants.slice(0, 2).length > 0 ? (
+              <div className="space-y-3 mt-3">
+                {restaurants.slice(0, 2).map((opt) => (
+                  <div
+                    key={opt.id}
+                    className="border border-neutral-200/90 rounded-xl p-3.5 bg-neutral-50/50 hover:bg-white hover:border-[#85312C]/40 transition-all shadow-2xs"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-sm font-semibold text-neutral-900 truncate">
+                          {opt.name}
+                        </h4>
+                        <p className="text-xs text-neutral-500 mt-1 line-clamp-1">
+                          {opt.sampleDishes || opt.cuisine}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="font-serif font-medium text-lg text-[#85312C] leading-none block">
+                          {opt.estimatedPrice || opt.price || '₹1,200'}
+                        </span>
+                        <span className="text-[10px] text-neutral-400 uppercase tracking-wider block mt-0.5">
+                          est. total
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <div className="pt-2 text-right">
+                  <button
+                    onClick={() => setCurrentPage('discover')}
+                    className="text-xs text-[#85312C] font-semibold hover:underline flex items-center gap-1 ml-auto cursor-pointer"
+                  >
+                    <span>Choose places to compare</span>
+                    <span>→</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="py-6 text-center space-y-2 mt-2">
+                <div className="w-10 h-10 rounded-full bg-[#FAF1E8] text-[#85312C] flex items-center justify-center mx-auto text-lg">
+                  ⚖️
+                </div>
+                <p className="text-sm font-medium text-neutral-800">
+                  No previous comparison yet
+                </p>
+                <p className="text-xs text-neutral-500 max-w-xs mx-auto">
+                  Pick any 2 places from Discover to compare their menus, offers, and itemized bill preview right here.
+                </p>
+                <button
+                  onClick={() => setCurrentPage('discover')}
+                  className="mt-2 text-xs bg-[#85312C] hover:bg-[#702622] text-white font-medium px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer"
+                >
+                  Choose places in Discover →
+                </button>
+              </div>
+            )}
 
-            <div className="flex items-center gap-1.5 text-[#85312C] text-xs font-semibold mt-5">
+            <div className="flex items-center gap-1.5 text-[#85312C] text-xs font-semibold mt-4 pt-3 border-t border-neutral-100">
               <span>★</span>
               <span>Real menus. Clearer choices.</span>
             </div>

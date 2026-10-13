@@ -38,6 +38,7 @@ export function setCompareCookie(data, userId) {
       craving: data.craving || '',
       anythingElse: data.anythingElse || '',
       dishQuantities: data.dishQuantities || {},
+      lastComparison: data.lastComparison || null,
       updatedAt: new Date().toISOString(),
     });
 
@@ -55,6 +56,68 @@ export function removeCompareCookie() {
     document.cookie = `${COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax`;
   } catch (err) {
     console.warn('Error removing compare cookie:', err);
+  }
+}
+
+/**
+ * Get last historical comparison for user
+ */
+export function getLastComparison(userId) {
+  if (!userId) {
+    try {
+      const anon = localStorage.getItem('zaika_last_comparison_anon');
+      return anon ? JSON.parse(anon) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // Check user-scoped localStorage first
+  try {
+    const saved = localStorage.getItem(`zaika_last_comparison_${userId}`);
+    if (saved) return JSON.parse(saved);
+  } catch (e) {
+    // Ignore parse error
+  }
+
+  // Check cookie fallback
+  const cookie = getCompareCookie();
+  if (cookie && cookie.userId === userId && cookie.lastComparison) {
+    return cookie.lastComparison;
+  }
+
+  return null;
+}
+
+/**
+ * Save last historical comparison for user
+ */
+export function saveLastComparison(userId, comparisonData) {
+  if (!comparisonData) return;
+
+  const key = userId ? `zaika_last_comparison_${userId}` : 'zaika_last_comparison_anon';
+  try {
+    localStorage.setItem(key, JSON.stringify(comparisonData));
+  } catch (err) {
+    console.warn('Error saving last comparison to localStorage:', err);
+  }
+
+  // Also sync to cookie and server if user is logged in
+  if (userId) {
+    const cookie = getCompareCookie() || {};
+    setCompareCookie(
+      {
+        ...cookie,
+        lastComparison: comparisonData,
+      },
+      userId
+    );
+
+    saveUserCompare({
+      userId,
+      restaurantIds: cookie.restaurantIds || [],
+      lastComparison: comparisonData,
+    }).catch(() => {});
   }
 }
 
@@ -129,5 +192,15 @@ export async function clearUserCompare() {
     console.warn('Failed to clear compare on server:', err);
   }
 
-  removeCompareCookie();
+  // Keep lastComparison in cookie if present
+  const current = getCompareCookie();
+  if (current) {
+    setCompareCookie({
+      ...current,
+      restaurantIds: [],
+      dishQuantities: {},
+    }, current.userId);
+  } else {
+    removeCompareCookie();
+  }
 }

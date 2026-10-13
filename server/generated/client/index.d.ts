@@ -3323,6 +3323,7 @@ export namespace Prisma {
     craving: number
     anythingElse: number
     dishQuantities: number
+    lastComparison: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -3379,6 +3380,7 @@ export namespace Prisma {
     craving?: true
     anythingElse?: true
     dishQuantities?: true
+    lastComparison?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -3482,6 +3484,7 @@ export namespace Prisma {
     craving: string | null
     anythingElse: string | null
     dishQuantities: JsonValue | null
+    lastComparison: JsonValue | null
     createdAt: Date
     updatedAt: Date
     _count: ComparisonCountAggregateOutputType | null
@@ -3517,6 +3520,7 @@ export namespace Prisma {
     craving?: boolean
     anythingElse?: boolean
     dishQuantities?: boolean
+    lastComparison?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -3534,6 +3538,7 @@ export namespace Prisma {
     craving?: boolean
     anythingElse?: boolean
     dishQuantities?: boolean
+    lastComparison?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -3551,6 +3556,7 @@ export namespace Prisma {
     craving?: boolean
     anythingElse?: boolean
     dishQuantities?: boolean
+    lastComparison?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -3568,11 +3574,12 @@ export namespace Prisma {
     craving?: boolean
     anythingElse?: boolean
     dishQuantities?: boolean
+    lastComparison?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type ComparisonOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "restaurantIds" | "budget" | "people" | "cuisine" | "dietary" | "drinksInput" | "craving" | "anythingElse" | "dishQuantities" | "createdAt" | "updatedAt", ExtArgs["result"]["comparison"]>
+  export type ComparisonOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "restaurantIds" | "budget" | "people" | "cuisine" | "dietary" | "drinksInput" | "craving" | "anythingElse" | "dishQuantities" | "lastComparison" | "createdAt" | "updatedAt", ExtArgs["result"]["comparison"]>
   export type ComparisonInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
   }
@@ -3600,6 +3607,7 @@ export namespace Prisma {
       craving: string | null
       anythingElse: string | null
       dishQuantities: Prisma.JsonValue | null
+      lastComparison: Prisma.JsonValue | null
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["comparison"]>
@@ -4037,6 +4045,7 @@ export namespace Prisma {
     readonly craving: FieldRef<"Comparison", 'String'>
     readonly anythingElse: FieldRef<"Comparison", 'String'>
     readonly dishQuantities: FieldRef<"Comparison", 'Json'>
+    readonly lastComparison: FieldRef<"Comparison", 'Json'>
     readonly createdAt: FieldRef<"Comparison", 'DateTime'>
     readonly updatedAt: FieldRef<"Comparison", 'DateTime'>
   }
@@ -4507,6 +4516,7 @@ export namespace Prisma {
     craving: 'craving',
     anythingElse: 'anythingElse',
     dishQuantities: 'dishQuantities',
+    lastComparison: 'lastComparison',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -4791,6 +4801,7 @@ export namespace Prisma {
     craving?: StringNullableFilter<"Comparison"> | string | null
     anythingElse?: StringNullableFilter<"Comparison"> | string | null
     dishQuantities?: JsonNullableFilter<"Comparison">
+    lastComparison?: JsonNullableFilter<"Comparison">
     createdAt?: DateTimeFilter<"Comparison"> | Date | string
     updatedAt?: DateTimeFilter<"Comparison"> | Date | string
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
@@ -4808,6 +4819,7 @@ export namespace Prisma {
     craving?: SortOrderInput | SortOrder
     anythingElse?: SortOrderInput | SortOrder
     dishQuantities?: SortOrderInput | SortOrder
+    lastComparison?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     user?: UserOrderByWithRelationInput
@@ -4828,6 +4840,7 @@ export namespace Prisma {
     craving?: StringNullableFilter<"Comparison"> | string | null
     anythingElse?: StringNullableFilter<"Comparison"> | string | null
     dishQuantities?: JsonNullableFilter<"Comparison">
+    lastComparison?: JsonNullableFilter<"Comparison">
     createdAt?: DateTimeFilter<"Comparison"> | Date | string
     updatedAt?: DateTimeFilter<"Comparison"> | Date | string
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
@@ -4845,6 +4858,7 @@ export namespace Prisma {
     craving?: SortOrderInput | SortOrder
     anythingElse?: SortOrderInput | SortOrder
     dishQuantities?: SortOrderInput | SortOrder
+    lastComparison?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: ComparisonCountOrderByAggregateInput
@@ -4869,6 +4883,7 @@ export namespace Prisma {
     craving?: StringNullableWithAggregatesFilter<"Comparison"> | string | null
     anythingElse?: StringNullableWithAggregatesFilter<"Comparison"> | string | null
     dishQuantities?: JsonNullableWithAggregatesFilter<"Comparison">
+    lastComparison?: JsonNullableWithAggregatesFilter<"Comparison">
     createdAt?: DateTimeWithAggregatesFilter<"Comparison"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Comparison"> | Date | string
   }
@@ -5045,6 +5060,7 @@ export namespace Prisma {
     craving?: string | null
     anythingElse?: string | null
     dishQuantities?: NullableJsonNullValueInput | InputJsonValue
+    lastComparison?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     user: UserCreateNestedOneWithoutComparisonInput
@@ -5062,6 +5078,7 @@ export namespace Prisma {
     craving?: string | null
     anythingElse?: string | null
     dishQuantities?: NullableJsonNullValueInput | InputJsonValue
+    lastComparison?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -5077,6 +5094,7 @@ export namespace Prisma {
     craving?: NullableStringFieldUpdateOperationsInput | string | null
     anythingElse?: NullableStringFieldUpdateOperationsInput | string | null
     dishQuantities?: NullableJsonNullValueInput | InputJsonValue
+    lastComparison?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     user?: UserUpdateOneRequiredWithoutComparisonNestedInput
@@ -5094,6 +5112,7 @@ export namespace Prisma {
     craving?: NullableStringFieldUpdateOperationsInput | string | null
     anythingElse?: NullableStringFieldUpdateOperationsInput | string | null
     dishQuantities?: NullableJsonNullValueInput | InputJsonValue
+    lastComparison?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -5110,6 +5129,7 @@ export namespace Prisma {
     craving?: string | null
     anythingElse?: string | null
     dishQuantities?: NullableJsonNullValueInput | InputJsonValue
+    lastComparison?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -5125,6 +5145,7 @@ export namespace Prisma {
     craving?: NullableStringFieldUpdateOperationsInput | string | null
     anythingElse?: NullableStringFieldUpdateOperationsInput | string | null
     dishQuantities?: NullableJsonNullValueInput | InputJsonValue
+    lastComparison?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -5141,6 +5162,7 @@ export namespace Prisma {
     craving?: NullableStringFieldUpdateOperationsInput | string | null
     anythingElse?: NullableStringFieldUpdateOperationsInput | string | null
     dishQuantities?: NullableJsonNullValueInput | InputJsonValue
+    lastComparison?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -5400,6 +5422,7 @@ export namespace Prisma {
     craving?: SortOrder
     anythingElse?: SortOrder
     dishQuantities?: SortOrder
+    lastComparison?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -5774,6 +5797,7 @@ export namespace Prisma {
     craving?: string | null
     anythingElse?: string | null
     dishQuantities?: NullableJsonNullValueInput | InputJsonValue
+    lastComparison?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -5789,6 +5813,7 @@ export namespace Prisma {
     craving?: string | null
     anythingElse?: string | null
     dishQuantities?: NullableJsonNullValueInput | InputJsonValue
+    lastComparison?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -5851,6 +5876,7 @@ export namespace Prisma {
     craving?: NullableStringFieldUpdateOperationsInput | string | null
     anythingElse?: NullableStringFieldUpdateOperationsInput | string | null
     dishQuantities?: NullableJsonNullValueInput | InputJsonValue
+    lastComparison?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -5866,6 +5892,7 @@ export namespace Prisma {
     craving?: NullableStringFieldUpdateOperationsInput | string | null
     anythingElse?: NullableStringFieldUpdateOperationsInput | string | null
     dishQuantities?: NullableJsonNullValueInput | InputJsonValue
+    lastComparison?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }

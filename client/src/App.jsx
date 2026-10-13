@@ -15,6 +15,8 @@ import {
   saveUserCompare,
   clearUserCompare,
   removeCompareCookie,
+  getLastComparison,
+  saveLastComparison,
 } from './services/compareService'
 
 const PROTECTED_PAGES = ['discover', 'compare', 'favorites', 'profile']
@@ -79,73 +81,43 @@ export default function App() {
     }
   })
 
-  const [selectedForCompare, setSelectedForCompare] = useState(() => {
+  // Historical previously compared menu to display in the Home page "The Zaika Way" card
+  const [lastComparison, setLastComparison] = useState(() => {
     try {
       const savedUser = localStorage.getItem('zaika_user')
       const user = savedUser ? JSON.parse(savedUser) : null
-      if (user?.id) {
-        const cookie = getCompareCookie()
-        if (cookie && cookie.userId === user.id && Array.isArray(cookie.restaurantIds)) {
-          const map = {}
-          cookie.restaurantIds.forEach((id) => {
-            map[id] = true
-          })
-          return map
-        }
-        const saved = localStorage.getItem(`zaika_selected_for_compare_${user.id}`)
-        return saved ? JSON.parse(saved) : {}
-      }
-      return {}
+      return getLastComparison(user?.id)
     } catch {
-      return {}
+      return null
     }
   })
 
-  // Synchronize compare list per-user from database & cookie
+  // Active places selected for comparison on the compare page (always starts empty on login/session)
+  const [selectedForCompare, setSelectedForCompare] = useState({})
+
+  // Synchronize last comparison per-user while keeping active compare list clean
   useEffect(() => {
     if (!currentUser?.id) {
       setSelectedForCompare({})
+      setLastComparison(getLastComparison(null))
       return
     }
 
     let isMounted = true
 
-    // Check cookie first
-    const cookie = getCompareCookie()
-    if (cookie && cookie.userId === currentUser.id && Array.isArray(cookie.restaurantIds)) {
-      const map = {}
-      cookie.restaurantIds.forEach((id) => {
-        map[id] = true
-      })
-      setSelectedForCompare(map)
-    } else {
-      try {
-        const saved = localStorage.getItem(`zaika_selected_for_compare_${currentUser.id}`)
-        if (saved) {
-          setSelectedForCompare(JSON.parse(saved))
-        } else {
-          setSelectedForCompare({})
-        }
-      } catch {
-        setSelectedForCompare({})
-      }
+    // Load cached last comparison
+    const cachedLast = getLastComparison(currentUser.id)
+    if (cachedLast) {
+      setLastComparison(cachedLast)
     }
 
-    // Fetch latest from database
+    // Fetch latest from database (only updates lastComparison history, never pollutes active selection)
     fetchUserCompare()
       .then((data) => {
         if (!isMounted || !data) return
-        if (Array.isArray(data.restaurantIds)) {
-          const map = {}
-          data.restaurantIds.forEach((id) => {
-            map[id] = true
-          })
-          setSelectedForCompare(map)
-          try {
-            localStorage.setItem(`zaika_selected_for_compare_${currentUser.id}`, JSON.stringify(map))
-          } catch (e) {
-            console.error(e)
-          }
+        if (data.lastComparison) {
+          setLastComparison(data.lastComparison)
+          saveLastComparison(currentUser.id, data.lastComparison)
         }
       })
       .catch((err) => {
@@ -354,6 +326,26 @@ export default function App() {
     }
   }
 
+  // Location change handler: remove previously compared places from active compare page
+  const handleLocationChange = useCallback((newLoc) => {
+    setSelectedForCompare({})
+    if (currentUser?.id) {
+      try {
+        localStorage.removeItem(`zaika_selected_for_compare_${currentUser.id}`)
+      } catch (e) {
+        console.error(e)
+      }
+      clearUserCompare().catch((err) => console.warn('Clear compare on location change error:', err))
+    }
+  }, [currentUser?.id])
+
+  // Save last compared menu snapshot
+  const handleSaveLastComparison = useCallback((compData) => {
+    if (!compData) return
+    setLastComparison(compData)
+    saveLastComparison(currentUser?.id, compData)
+  }, [currentUser?.id])
+
   const handleAddRecentSearch = (query) => {
     if (!query || !query.trim()) return
     const clean = query.trim()
@@ -396,26 +388,24 @@ export default function App() {
       console.error(e)
     }
 
+    // Always reset active compare selection on login:
+    // Ask user to choose places again, never keep stale places in compare page
+    setSelectedForCompare({})
+
     if (user?.id) {
-      const cookie = getCompareCookie()
-      if (cookie && cookie.userId === user.id && Array.isArray(cookie.restaurantIds)) {
-        const map = {}
-        cookie.restaurantIds.forEach((id) => {
-          map[id] = true
-        })
-        setSelectedForCompare(map)
-      } else {
-        try {
-          const local = localStorage.getItem(`zaika_selected_for_compare_${user.id}`)
-          if (local) {
-            setSelectedForCompare(JSON.parse(local))
-          } else {
-            setSelectedForCompare({})
-          }
-        } catch {
-          setSelectedForCompare({})
-        }
+      try {
+        localStorage.removeItem(`zaika_selected_for_compare_${user.id}`)
+      } catch (e) {
+        console.error(e)
       }
+
+      // Restore previously compared menu strictly for the Home page hero recap
+      const prev = getLastComparison(user.id)
+      if (prev) {
+        setLastComparison(prev)
+      }
+
+      clearUserCompare().catch(() => {})
     }
 
     const destination = redirectAfterLogin || 'home'
@@ -526,6 +516,7 @@ export default function App() {
           onToggleFavorite={handleToggleFavorite}
           selectedForCompare={selectedForCompare}
           onToggleCompare={handleToggleCompare}
+          lastComparison={lastComparison}
         />
       )}
 
@@ -541,6 +532,8 @@ export default function App() {
             onToggleFavorite={handleToggleFavorite}
             selectedForCompare={selectedForCompare}
             onToggleCompare={handleToggleCompare}
+            onClearCompare={handleClearCompare}
+            onLocationChange={handleLocationChange}
             onUpdateDiscoveredRestaurants={handleUpdateDiscoveredRestaurants}
           />
         ) : (
@@ -587,6 +580,8 @@ export default function App() {
             onToggleFavorite={handleToggleFavorite}
             discoveredRestaurants={discoveredRestaurants}
             onUpdateDiscoveredRestaurants={handleUpdateDiscoveredRestaurants}
+            lastComparison={lastComparison}
+            onSaveLastComparison={handleSaveLastComparison}
           />
         ) : (
           <LoginPage

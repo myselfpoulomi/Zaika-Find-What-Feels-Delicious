@@ -31,6 +31,8 @@ export default function DiscoverPage({
   onToggleFavorite: externalOnToggleFavorite,
   selectedForCompare: externalSelectedForCompare,
   onToggleCompare: externalOnToggleCompare,
+  onClearCompare,
+  onLocationChange,
   onUpdateDiscoveredRestaurants
 }) {
   const [searchQuery, setSearchQuery] = useState(initialQuery)
@@ -716,6 +718,11 @@ export default function DiscoverPage({
         onSelectLocation={(newLoc) => {
           setSelectedLocation(newLoc)
           saveUserLocation(currentUser?.id, newLoc)
+          if (onLocationChange) {
+            onLocationChange(newLoc)
+          } else if (onClearCompare) {
+            onClearCompare()
+          }
         }}
       />
 
