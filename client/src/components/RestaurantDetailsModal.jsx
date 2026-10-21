@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { fetchRestaurantMenu } from '../services/restaurantService'
+import { getApiUrl } from '../services/apiConfig'
 
 export default function RestaurantDetailsModal({
   isOpen,
@@ -22,13 +23,13 @@ export default function RestaurantDetailsModal({
 
     async function fetchPlaceDetails() {
       try {
-        const res = await fetch(`http://localhost:5000/api/restaurants/${restaurant.id}/details`)
+        const res = await fetch(getApiUrl(`/api/restaurants/${restaurant.id}/details`))
         if (!res.ok) throw new Error('Failed to fetch place details')
         const json = await res.json()
         if (isMounted && json.success && json.data) {
           // Prefix photo URLs if needed
           const photos = (json.data.photos || []).map(p =>
-            p.startsWith('/api') ? `http://localhost:5000${p}` : p
+            p.startsWith('/api') ? getApiUrl(p) : p
           )
           setDetails({
             ...json.data,

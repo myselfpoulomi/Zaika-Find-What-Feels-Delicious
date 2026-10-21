@@ -25,7 +25,7 @@ const setCompareCookie = (res, data, userId) => {
     res.cookie(COOKIE_COMPARE_NAME, payload, {
       httpOnly: false, // Allows both client-side read and server-side sync
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      sameSite: 'lax',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       secure: process.env.NODE_ENV === 'production',
       path: '/',
     });

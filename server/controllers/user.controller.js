@@ -324,7 +324,7 @@ export const updateMyProfile = async (req, res) => {
         try {
           res.cookie('zaika_location', JSON.stringify({ userId: req.user.id, ...selectedLocation }), {
             maxAge: 30 * 24 * 60 * 60 * 1000,
-            sameSite: 'lax',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             secure: process.env.NODE_ENV === 'production',
             path: '/',
           });
@@ -502,7 +502,7 @@ export const updateUserPreference = async (req, res) => {
       try {
         res.cookie('zaika_location', JSON.stringify({ userId: req.user.id, ...selectedLocation }), {
           maxAge: 30 * 24 * 60 * 60 * 1000,
-          sameSite: 'lax',
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
           secure: process.env.NODE_ENV === 'production',
           path: '/',
         });

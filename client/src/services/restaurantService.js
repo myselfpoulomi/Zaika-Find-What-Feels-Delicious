@@ -1,4 +1,5 @@
 import heroBg from '../assets/hero_bg.jpg'
+import { getApiUrl } from './apiConfig'
 
 export function ensureRestaurantMenu(restaurant) {
   if (!restaurant) return null
@@ -88,7 +89,7 @@ export async function fetchLiveRestaurants({
       queryParams.set('cuisine', cuisine)
     }
 
-    const res = await fetch(`http://localhost:5000/api/restaurants/nearby?${queryParams.toString()}`)
+    const res = await fetch(getApiUrl(`/api/restaurants/nearby?${queryParams.toString()}`))
     if (!res.ok) throw new Error('Failed to fetch nearby restaurants')
     const json = await res.json()
 
@@ -96,13 +97,13 @@ export async function fetchLiveRestaurants({
       return json.data.map((item) => {
         const rawPhotos = item.photos || (item.image ? [item.image] : [])
         const processedPhotos = rawPhotos.map((p) =>
-          p.startsWith('/api') ? `http://localhost:5000${p}` : p
+          p.startsWith('/api') ? getApiUrl(p) : p
         )
         return ensureRestaurantMenu({
           ...item,
           distance: item.displayDistance || (item.distanceKm ? `${item.distanceKm} km away` : '1.5 km away'),
           image: item.image?.startsWith('/api')
-            ? `http://localhost:5000${item.image}`
+            ? getApiUrl(item.image)
             : (item.image || heroBg),
           photos: processedPhotos.length > 0 ? processedPhotos : [heroBg]
         })
@@ -125,7 +126,7 @@ export async function fetchRestaurantMenu(restaurant) {
       category: restaurant.category || ''
     })
     const placeId = restaurant.id || restaurant.googlePlaceId || 'general'
-    const res = await fetch(`http://localhost:5000/api/restaurants/${encodeURIComponent(placeId)}/menu?${queryParams.toString()}`)
+    const res = await fetch(getApiUrl(`/api/restaurants/${encodeURIComponent(placeId)}/menu?${queryParams.toString()}`))
     if (!res.ok) throw new Error('Failed to fetch menu')
     const json = await res.json()
     if (json.success) {
@@ -148,7 +149,7 @@ export async function fetchAiComparison({
   craving = ''
 } = {}) {
   try {
-    const res = await fetch('http://localhost:5000/api/restaurants/ai-compare', {
+    const res = await fetch(getApiUrl('/api/restaurants/ai-compare'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

@@ -4,6 +4,7 @@ import LocationPickerModal from '../components/LocationPickerModal'
 import RestaurantDetailsModal from '../components/RestaurantDetailsModal'
 import { ensureRestaurantMenu } from '../services/restaurantService'
 import { getUserLocation, saveUserLocation, DEFAULT_LOCATION } from '../services/locationService'
+import { getApiUrl } from '../services/apiConfig'
 
 // Helper function to calculate real geographical distance in km (Haversine formula)
 function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
@@ -96,7 +97,7 @@ export default function DiscoverPage({
           queryParams.set('cuisine', cuisineFilter)
         }
 
-        const res = await fetch(`http://localhost:5000/api/restaurants/nearby?${queryParams.toString()}`)
+        const res = await fetch(getApiUrl(`/api/restaurants/nearby?${queryParams.toString()}`))
         if (!res.ok) throw new Error('Failed to fetch nearby restaurants')
         const json = await res.json()
 
@@ -112,12 +113,12 @@ export default function DiscoverPage({
               const processed = json.data.map((item) => {
                 const rawPhotos = item.photos || (item.image ? [item.image] : [])
                 const processedPhotos = rawPhotos.map((p) =>
-                  p.startsWith('/api') ? `http://localhost:5000${p}` : p
+                  p.startsWith('/api') ? getApiUrl(p) : p
                 )
                 return ensureRestaurantMenu({
                   ...item,
                   image: item.image?.startsWith('/api')
-                    ? `http://localhost:5000${item.image}`
+                    ? getApiUrl(item.image)
                     : (item.image || heroBg),
                   photos: processedPhotos.length > 0 ? processedPhotos : [heroBg],
                 })

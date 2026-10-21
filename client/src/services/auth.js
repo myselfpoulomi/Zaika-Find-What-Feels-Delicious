@@ -3,6 +3,8 @@
  * Handles complete CRUD operations using HTTP-only cookie authentication.
  */
 
+import { getApiUrl } from './apiConfig';
+
 const AUTH_BASE = '/api/auth';
 const USER_BASE = '/api/user';
 
@@ -14,7 +16,7 @@ async function apiRequest(url, options = {}) {
     'Content-Type': 'application/json',
   };
 
-  const response = await fetch(url, {
+  const response = await fetch(getApiUrl(url), {
     ...options,
     headers: {
       ...defaultHeaders,

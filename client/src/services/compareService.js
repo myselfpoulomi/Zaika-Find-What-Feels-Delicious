@@ -3,7 +3,9 @@
  * Handles per-user comparison synchronization with PostgreSQL and Cookies.
  */
 
-const COMPARE_BASE = '/api/compare';
+import { getApiUrl } from './apiConfig';
+
+const COMPARE_BASE = getApiUrl('/api/compare');
 const COOKIE_NAME = 'zaika_compare';
 
 /**

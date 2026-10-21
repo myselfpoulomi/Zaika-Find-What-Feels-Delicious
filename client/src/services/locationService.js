@@ -4,7 +4,9 @@
  * Defaults to null/empty if the user hasn't chosen a location yet.
  */
 
-const PREFERENCE_BASE = '/api/preference';
+import { getApiUrl } from './apiConfig';
+
+const PREFERENCE_BASE = getApiUrl('/api/preference');
 const COOKIE_LOCATION_NAME = 'zaika_location';
 
 export const DEFAULT_LOCATION = null;
