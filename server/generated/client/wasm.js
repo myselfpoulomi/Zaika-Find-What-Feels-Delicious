@@ -175,7 +175,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "C:\\vs code\\Zaika-Find-What-Feels-Delicious\\server\\generated\\client",
+      "value": "/Users/subhajitghosh/Projects/PERSONAL/Zaika-Find-What-Feels-Delicious/server/generated/client",
       "fromEnvVar": null
     },
     "config": {
@@ -184,12 +184,16 @@ const config = {
     "binaryTargets": [
       {
         "fromEnvVar": null,
-        "value": "windows",
+        "value": "darwin-arm64",
         "native": true
+      },
+      {
+        "fromEnvVar": null,
+        "value": "rhel-openssl-3.0.x"
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "C:\\vs code\\Zaika-Find-What-Feels-Delicious\\server\\prisma\\schema.prisma",
+    "sourceFilePath": "/Users/subhajitghosh/Projects/PERSONAL/Zaika-Find-What-Feels-Delicious/server/prisma/schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
@@ -203,6 +207,7 @@ const config = {
     "db"
   ],
   "activeProvider": "postgresql",
+  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
@@ -211,8 +216,8 @@ const config = {
       }
     }
   },
-  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\ngenerator client {\n  provider = \"prisma-client-js\"\n  output   = \"../generated/client\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel User {\n  id           String      @id @default(cuid())\n  email        String      @unique\n  passwordHash String\n  name         String\n  phone        String?\n  bio          String?\n  preference   Preference?\n  comparison   Comparison?\n  createdAt    DateTime    @default(now())\n  updatedAt    DateTime    @updatedAt\n\n  @@map(\"users\")\n}\n\nmodel Preference {\n  id               String   @id @default(cuid())\n  userId           String   @unique\n  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n  favoriteCuisine  String?  @default(\"Italian\")\n  typicalBudget    String?  @default(\"1500\")\n  dietaryPref      String?  @default(\"Vegetarian\")\n  selectedLocation Json?\n  createdAt        DateTime @default(now())\n  updatedAt        DateTime @updatedAt\n\n  @@map(\"preferences\")\n}\n\nmodel Comparison {\n  id             String   @id @default(cuid())\n  userId         String   @unique\n  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n  restaurantIds  String[] @default([])\n  budget         Int?     @default(1500)\n  people         Int?     @default(2)\n  cuisine        String?  @default(\"Any cuisine\")\n  dietary        String?  @default(\"Vegetarian\")\n  drinksInput    String?  @default(\"\")\n  craving        String?  @default(\"\")\n  anythingElse   String?  @default(\"Something filling, not too expensive.\")\n  dishQuantities Json?\n  lastComparison Json?\n  createdAt      DateTime @default(now())\n  updatedAt      DateTime @updatedAt\n\n  @@map(\"comparisons\")\n}\n",
-  "inlineSchemaHash": "8e5a218100395575ce82bc9d8592a7be5b0b3900e0dcf565b4b872e2277411a2",
+  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\ngenerator client {\n  provider      = \"prisma-client-js\"\n  output        = \"../generated/client\"\n  binaryTargets = [\"native\", \"rhel-openssl-3.0.x\"]\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel User {\n  id           String      @id @default(cuid())\n  email        String      @unique\n  passwordHash String\n  name         String\n  phone        String?\n  bio          String?\n  preference   Preference?\n  comparison   Comparison?\n  createdAt    DateTime    @default(now())\n  updatedAt    DateTime    @updatedAt\n\n  @@map(\"users\")\n}\n\nmodel Preference {\n  id               String   @id @default(cuid())\n  userId           String   @unique\n  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n  favoriteCuisine  String?  @default(\"Italian\")\n  typicalBudget    String?  @default(\"1500\")\n  dietaryPref      String?  @default(\"Vegetarian\")\n  selectedLocation Json?\n  createdAt        DateTime @default(now())\n  updatedAt        DateTime @updatedAt\n\n  @@map(\"preferences\")\n}\n\nmodel Comparison {\n  id             String   @id @default(cuid())\n  userId         String   @unique\n  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n  restaurantIds  String[] @default([])\n  budget         Int?     @default(1500)\n  people         Int?     @default(2)\n  cuisine        String?  @default(\"Any cuisine\")\n  dietary        String?  @default(\"Vegetarian\")\n  drinksInput    String?  @default(\"\")\n  craving        String?  @default(\"\")\n  anythingElse   String?  @default(\"Something filling, not too expensive.\")\n  dishQuantities Json?\n  lastComparison Json?\n  createdAt      DateTime @default(now())\n  updatedAt      DateTime @updatedAt\n\n  @@map(\"comparisons\")\n}\n",
+  "inlineSchemaHash": "0e878724db210685f866bf8f8783a6182a5af858c946aee84b5f1f7b4c0cf996",
   "copyEngine": true
 }
 config.dirname = '/'
