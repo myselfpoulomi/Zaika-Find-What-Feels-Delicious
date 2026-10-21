@@ -99,6 +99,8 @@ export const getComparison = async (req, res) => {
     // Always keep cookie synced with user's data
     setCompareCookie(res, comparison, userId);
 
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+
     return res.status(200).json({
       success: true,
       data: comparison,
